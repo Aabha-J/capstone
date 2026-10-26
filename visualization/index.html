@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chiplet Interconnect Simulator</title>
+  <style>
+    :root { color-scheme: light; --ink: #1e293b; --muted: #64748b; --line: #dbe3ed; --panel: #fff; --bg: #f4f7fb; --blue: #2563eb; --teal: #0f766e; --violet: #7c3aed; --red: #b91c1c; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, "Segoe UI", sans-serif; }
+    header { background: #14243b; color: white; padding: 22px max(24px, calc((100vw - 1440px) / 2)); }
+    header h1 { margin: 0 0 4px; font-size: 22px; }
+    header p { color: #cbd5e1; margin: 0; }
+    main { max-width: 1440px; margin: 22px auto; padding: 0 22px 40px; display: grid; grid-template-columns: minmax(330px, 440px) minmax(0, 1fr); align-items: start; gap: 18px; }
+    .column { min-width: 0; display: grid; gap: 18px; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 2px 7px #1328460a; }
+    h2 { font-size: 16px; margin: 0 0 14px; }
+    h3 { font-size: 14px; margin: 18px 0 8px; }
+    .help, .subtle { color: var(--muted); font-size: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: #334155; }
+    input, select { width: 100%; border: 1px solid #cbd5e1; background: white; border-radius: 6px; color: var(--ink); font: inherit; padding: 7px 8px; }
+    input:focus, select:focus { outline: 2px solid #93c5fd; border-color: var(--blue); }
+    button { border: 0; border-radius: 7px; background: var(--blue); color: white; padding: 9px 13px; font: inherit; font-weight: 650; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { opacity: .6; cursor: wait; }
+    button.secondary { background: #e8eef7; color: #1e293b; }
+    button.secondary:hover { background: #dbe5f2; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; align-items: center; }
+    #links { display: grid; gap: 10px; max-height: 590px; overflow: auto; padding-right: 3px; }
+    .link-card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+    .link-head { display: grid; grid-template-columns: 1fr 110px auto; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .link-head strong { font-size: 13px; }
+    .link-head label { display: flex; align-items: center; gap: 5px; font-weight: 500; }
+    .link-head input[type=checkbox] { width: auto; }
+    .link-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+    .link-fields label { font-size: 11px; }
+    .optical-fields { border-top: 1px dashed var(--line); margin-top: 8px; padding-top: 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+    .hidden { display: none; }
+    #status { color: var(--muted); min-height: 20px; }
+    #status.error { color: var(--red); }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+    .stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; }
+    .stat span { display: block; color: var(--muted); font-size: 11px; }
+    .stat strong { display: block; margin-top: 4px; font-size: 15px; overflow-wrap: anywhere; }
+    #topology { display: block; width: 100%; min-height: 250px; border-radius: 8px; background: #f8fafc; }
+    .legend { display: flex; flex-wrap: wrap; gap: 15px; margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+    .legend span { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; display: inline-block; border-radius: 50%; }
+    .dot.electrical { background: var(--teal); } .dot.optical { background: var(--violet); }
+    .overflow { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: center; white-space: nowrap; }
+    th { background: #f1f5f9; font-weight: 650; }
+    td.zero { color: #cbd5e1; }
+    #paths { display: grid; gap: 6px; max-height: 230px; overflow: auto; }
+    .path-row { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid #edf1f6; padding: 5px 0; }
+    .path-row code { color: #334155; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    @media (max-width: 550px) { .stats { grid-template-columns: 1fr 1fr; } section { padding: 14px; } main { padding: 0 12px 28px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Chiplet Interconnect Simulator</h1>
+    <p>Configure a topology, generate repeatable random traffic, and compare interconnects interactively.</p>
+  </header>
+  <main>
+    <div class="column">
+      <section>
+        <h2>Simulation inputs</h2>
+        <div class="form-grid">
+          <label>Chiplet count<input id="chiplet-count" type="number" min="2" max="16" value="4"></label>
+          <label>Total packets<input id="total-packets" type="number" min="0" max="5000" value="120"></label>
+          <label>Packet size (bits)<input id="packet-size" type="number" min="1" value="256"></label>
+          <label>Simulation duration (ns)<input id="simulation-time" type="number" min="0.000001" step="any" value="10"></label>
+          <label>Random seed<input id="seed" type="number" step="1" value="42"></label>
+        </div>
+        <p class="help">The seed makes the traffic matrix reproducible. Reuse the same seed and packet settings to compare topologies. Duration is in ns.</p>
+        <div class="form-grid">
+          <label>Topology preset
+            <select id="topology-preset">
+              <option value="mesh">2D mesh</option>
+              <option value="ring">Ring</option>
+              <option value="star">Star</option>
+              <option value="line">Line</option>
+              <option value="fully_connected">Fully connected</option>
+            </select>
+          </label>
+          <label>Default link distance (mm)<input id="default-distance" type="number" min="0" step="any" value="1"></label>
+        </div>
+        <div class="actions"><button id="build">Build topology</button><button class="secondary" id="reset-distances">Set all distances to default</button><button id="run">Generate traffic &amp; simulate</button></div>
+        <p id="status" role="status"></p>
+      </section>
+      <section>
+        <h2>System-wide interconnect</h2>
+        <p class="help">The selected technology and parameter values are shared by every connected link. Effective bandwidth is the lower of aggregate data rate and bandwidth density × area.</p>
+        <label>Interconnect type
+          <select id="interconnect-type">
+            <option value="electrical">Electrical</option>
+            <option value="optical">Optical</option>
+          </select>
+        </label>
+        <div id="shared-metrics" class="link-fields" style="margin-top: 10px"></div>
+        <div id="shared-optical" class="optical-fields hidden"></div>
+      </section>
+      <section>
+        <h2>Topology links</h2>
+        <p class="help">Links are bidirectional. Distances and maximum reach are in mm; default is 1 mm. Change distances per link or reset all to the configured default. Links beyond known maximum reach are excluded.</p>
+        <div id="links"></div>
+      </section>
+    </div>
+    <div class="column">
+      <section>
+        <h2>Topology</h2>
+        <svg id="topology" viewBox="0 0 760 390" role="img" aria-label="Chiplet network topology"></svg>
+        <div class="legend"><span><i class="dot electrical"></i>Electrical link</span><span><i class="dot optical"></i>Optical link</span><span>Line width indicates routed packet count</span></div>
+      </section>
+      <section>
+        <h2>Traffic matrix</h2>
+        <p class="help">Rows are packet sources; columns are destinations. Counts are generated randomly over directed non-self pairs.</p>
+        <div id="matrix" class="overflow"><span class="subtle">Run a simulation to generate a matrix.</span></div>
+      </section>
+      <section>
+        <h2>Simulation results</h2>
+        <div class="stats">
+          <div class="stat"><span>Packets delivered</span><strong id="stat-packets">—</strong></div>
+          <div class="stat"><span>Average latency / packet (ps)</span><strong id="stat-latency">—</strong></div>
+          <div class="stat"><span>Total energy (pJ)</span><strong id="stat-energy">—</strong></div>
+          <div class="stat"><span>Average packet error probability</span><strong id="stat-error">—</strong></div>
+        </div>
+        <h3>Observed routes</h3>
+        <div id="paths"><span class="subtle">Routes appear after a simulation.</span></div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const standardMetrics = [
+      ["latency", "Base latency (ps)"],
+      ["data_rate", "Data rate per lane/channel (Gbit/s)"],
+      ["bandwidth_density", "Bandwidth density (Gbit/s/mm²)"],
+      ["area_footprint", "Interconnect area (mm²)"],
+      ["energy_per_bit", "Energy per bit (pJ/bit)"],
+      ["ber", "Bit error rate"],
+      ["reach", "Maximum reach (mm)"]
+    ];
+    const electricalMetrics = [
+      ["lane_count", "Lane count"]
+    ];
+    const opticalTechnologyMetrics = [
+      ["wavelength", "Wavelength (nm)"],
+      ["wavelength_count", "Wavelength count"],
+      ["channel_count", "Channel count"]
+    ];
+    const opticalMetrics = [
+      ["electrical_to_optical_conversion_latency", "Electrical → optical latency (ps)"],
+      ["optical_to_electrical_conversion_latency", "Optical → electrical latency (ps)"],
+      ["electrical_to_optical_conversion_energy", "Electrical → optical energy (pJ/bit)"],
+      ["optical_to_electrical_conversion_energy", "Optical → electrical energy (pJ/bit)"]
+    ];
+    let chiplets = [];
+    let lastData = null;
+
+    function createSharedMetrics() {
+      const standardHost = document.querySelector("#shared-metrics");
+      const opticalHost = document.querySelector("#shared-optical");
+      standardHost.innerHTML = standardMetrics.map(([key, label]) => field(key, label, ({
+        latency: 2,
+        data_rate: 10,
+        bandwidth_density: 64,
+        area_footprint: 1,
+        energy_per_bit: 0.5,
+        ber: 0.000001,
+        reach: 100
+      })[key])).join("");
+      opticalHost.innerHTML = [
+        ...opticalTechnologyMetrics.map(([key, label]) => field(key, label, key === "wavelength" ? 1550 : 1)),
+        ...opticalMetrics.map(([key, label]) => field(key, label, 0))
+      ].join("");
+      const electrical = document.createElement("div");
+      electrical.id = "shared-electrical";
+      electrical.className = "optical-fields";
+      electrical.innerHTML = field("lane_count", "Lane count", 4).replace('type="number" step="any"', 'type="number" min="1" step="1"');
+      standardHost.after(electrical);
+      document.querySelectorAll("#shared-optical [data-metric='wavelength_count'], #shared-optical [data-metric='channel_count']")
+        .forEach(input => {
+          input.min = "1";
+          input.step = "1";
+        });
+    }
+
+    function field(name, label, value) {
+      return `<label>${label}<input data-metric="${name}" type="number" step="any" value="${value}"></label>`;
+    }
+
+    async function createLinks() {
+      const count = Number(document.querySelector("#chiplet-count").value);
+      if (!Number.isInteger(count) || count < 2 || count > 16) {
+        showError("Choose between 2 and 16 chiplets.");
+        return;
+      }
+      chiplets = Array.from({ length: count }, (_, i) => `C${i}`);
+      const defaultDistance = Number(document.querySelector("#default-distance").value);
+      if (!Number.isFinite(defaultDistance) || defaultDistance < 0) {
+        showError("Default link distance must be a non-negative number of mm.");
+        return;
+      }
+      const topology = document.querySelector("#topology-preset").value;
+      try {
+        const response = await fetch("/api/topology", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chiplets, topology })
+        });
+        const topologyData = await response.json();
+        if (!response.ok) throw new Error(topologyData.error || "Unable to build topology.");
+        const enabledPairs = new Set(
+          topologyData.links.map(pair => pair.slice().sort().join("|"))
+        );
+      const host = document.querySelector("#links");
+      host.replaceChildren();
+      for (let i = 0; i < count; i++) {
+        for (let j = i + 1; j < count; j++) {
+          const card = document.createElement("div");
+          card.className = "link-card";
+          card.dataset.first = chiplets[i];
+          card.dataset.second = chiplets[j];
+          card.innerHTML = `
+            <div class="link-head" style="grid-template-columns: 1fr auto">
+              <strong>${chiplets[i]} ↔ ${chiplets[j]}</strong>
+              <label><input data-enabled type="checkbox" ${enabledPairs.has(`${chiplets[i]}|${chiplets[j]}`) ? "checked" : ""}> Connected</label>
+            </div>
+            <label>Distance (mm)<input data-distance type="number" min="0" step="any" value="${defaultDistance}"></label>`;
+          host.append(card);
+        }
+      }
+      drawTopology();
+      setStatus(`${count} chiplets ready using the ${topology.replace("_", " ")} preset. Distances default to ${defaultDistance} mm.`);
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    function formData() {
+      const n = Number(document.querySelector("#chiplet-count").value);
+      if (n !== chiplets.length) throw new Error("Build the topology after changing chiplet count.");
+      const totalPackets = Number(document.querySelector("#total-packets").value);
+      const packetSize = Number(document.querySelector("#packet-size").value);
+      const simulationTime = Number(document.querySelector("#simulation-time").value);
+      const seed = Number(document.querySelector("#seed").value);
+      if (!Number.isInteger(totalPackets) || totalPackets < 0 || totalPackets > 5000) throw new Error("Total packets must be from 0 to 5000.");
+      if (!Number.isInteger(packetSize) || packetSize <= 0) throw new Error("Packet size must be a positive integer.");
+      if (!Number.isFinite(simulationTime) || simulationTime <= 0) throw new Error("Simulation time must be positive.");
+      if (!Number.isInteger(seed)) throw new Error("Random seed must be an integer.");
+      const interconnectType = document.querySelector("#interconnect-type").value;
+      const metrics = {};
+      const metricSelector = interconnectType === "optical"
+        ? "#shared-metrics [data-metric], #shared-optical [data-metric]"
+        : "#shared-metrics [data-metric], #shared-electrical [data-metric]";
+      document.querySelectorAll(metricSelector).forEach(input => {
+        metrics[input.dataset.metric] = input.value === "" ? null : Number(input.value);
+      });
+      return {
+        chiplets,
+        total_packets: totalPackets,
+        packet_size_bits: packetSize,
+        simulation_time: simulationTime,
+        seed,
+        topology: document.querySelector("#topology-preset").value,
+        interconnect: { type: interconnectType, metrics },
+        links: [...document.querySelectorAll(".link-card")].map(card => {
+          const distance = card.querySelector("[data-distance]").value;
+          return {
+            first: card.dataset.first,
+            second: card.dataset.second,
+            enabled: card.querySelector("[data-enabled]").checked,
+            distance: distance === "" ? null : Number(distance)
+          };
+        })
+      };
+    }
+
+    async function runSimulation() {
+      const button = document.querySelector("#run");
+      button.disabled = true;
+      setStatus("Generating traffic and simulating packets…");
+      try {
+        const payload = formData();
+        const response = await fetch("/api/simulate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || "Simulation failed.");
+        lastData = body;
+        renderMatrix(body.matrix);
+        renderResults(body);
+        drawTopology(body);
+        setStatus(`Simulation complete: ${body.delivered_packets} packets routed; offered rate ${format(body.offered_packet_rate)} packets/ns.`);
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function format(value) {
+      if (value === null || value === undefined) return "—";
+      if (typeof value === "string") return value;
+      return Number(value).toPrecision(5).replace(/(?:\.0+|(\.\d+?)0+)$/, "$1");
+    }
+
+    function showError(message) {
+      setStatus(message, true);
+    }
+    function setStatus(message, error = false) {
+      const status = document.querySelector("#status");
+      status.textContent = message;
+      status.classList.toggle("error", error);
+    }
+
+    function renderMatrix(matrix) {
+      const host = document.querySelector("#matrix");
+      host.replaceChildren();
+      const table = document.createElement("table");
+      const header = document.createElement("tr");
+      header.append(Object.assign(document.createElement("th"), { textContent: "From ↓ / To →" }));
+      matrix.chiplets.forEach(name => header.append(Object.assign(document.createElement("th"), { textContent: name })));
+      table.append(header);
+      matrix.counts.forEach((row, i) => {
+        const tr = document.createElement("tr");
+        tr.append(Object.assign(document.createElement("th"), { textContent: matrix.chiplets[i] }));
+        row.forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          if (!value) td.className = "zero";
+          tr.append(td);
+        });
+        table.append(tr);
+      });
+      host.append(table);
+    }
+
+    function renderResults(data) {
+      document.querySelector("#stat-packets").textContent = `${data.delivered_packets} / ${data.total_packets}`;
+      document.querySelector("#stat-latency").textContent = format(data.average_latency);
+      document.querySelector("#stat-energy").textContent = format(data.total_energy);
+      document.querySelector("#stat-error").textContent = format(data.average_error_probability);
+      const host = document.querySelector("#paths");
+      host.replaceChildren();
+      if (!data.routes.length) {
+        host.append(Object.assign(document.createElement("span"), { className: "subtle", textContent: "No packets were generated." }));
+        return;
+      }
+      data.routes.forEach(route => {
+        const row = document.createElement("div");
+        row.className = "path-row";
+        const path = document.createElement("code");
+        path.textContent = route.path.join(" → ");
+        const metrics = document.createElement("span");
+        metrics.className = "subtle";
+        metrics.textContent = `${route.count} packet${route.count === 1 ? "" : "s"} · latency ${format(route.average_latency)} ps`;
+        row.append(path, metrics);
+        host.append(row);
+      });
+    }
+
+    function drawTopology(data = lastData) {
+      const svg = document.querySelector("#topology");
+      svg.replaceChildren();
+      if (!chiplets.length) return;
+      const NS = "http://www.w3.org/2000/svg";
+      const point = new Map();
+      const cx = 380, cy = 195, rx = Math.min(285, 75 + chiplets.length * 19), ry = Math.min(140, 52 + chiplets.length * 10);
+      const preset = document.querySelector("#topology-preset").value;
+      if (preset === "mesh") {
+        const columns = Math.ceil(Math.sqrt(chiplets.length));
+        const rows = Math.ceil(chiplets.length / columns);
+        chiplets.forEach((name, i) => {
+          const col = i % columns, row = Math.floor(i / columns);
+          point.set(name, {
+            x: columns === 1 ? cx : 90 + col * 580 / (columns - 1),
+            y: rows === 1 ? cy : 75 + row * 240 / (rows - 1)
+          });
+        });
+      } else if (preset === "line") {
+        chiplets.forEach((name, i) => {
+          point.set(name, {
+            x: chiplets.length === 1 ? cx : 70 + i * 620 / (chiplets.length - 1),
+            y: cy
+          });
+        });
+      } else if (preset === "star") {
+        chiplets.forEach((name, i) => {
+          if (i === 0) {
+            point.set(name, { x: cx, y: cy });
+          } else {
+            const angle = -Math.PI / 2 + (i - 1) * 2 * Math.PI / (chiplets.length - 1);
+            point.set(name, { x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle) });
+          }
+        });
+      } else {
+        chiplets.forEach((name, i) => {
+          const angle = -Math.PI / 2 + i * 2 * Math.PI / chiplets.length;
+          point.set(name, { x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle) });
+        });
+      }
+      const loads = new Map();
+      if (data) data.routes.forEach(route => {
+        for (let i = 0; i < route.path.length - 1; i++) {
+          const key = [route.path[i], route.path[i + 1]].sort().join("|");
+          loads.set(key, (loads.get(key) || 0) + route.count);
+        }
+      });
+      document.querySelectorAll(".link-card").forEach(card => {
+        if (!card.querySelector("[data-enabled]").checked) return;
+        const first = card.dataset.first, second = card.dataset.second;
+        const a = point.get(first), b = point.get(second);
+        const type = document.querySelector("#interconnect-type").value;
+        const line = document.createElementNS(NS, "line");
+        line.setAttribute("x1", a.x); line.setAttribute("y1", a.y); line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+        line.setAttribute("stroke", type === "optical" ? "#7c3aed" : "#0f766e");
+        const load = loads.get([first, second].sort().join("|")) || 0;
+        line.setAttribute("stroke-width", load ? String(Math.min(8, 1.5 + Math.log2(load + 1))) : "2");
+        line.setAttribute("opacity", load ? "0.88" : "0.48");
+        svg.append(line);
+        const text = document.createElementNS(NS, "text");
+        text.setAttribute("x", (a.x + b.x) / 2);
+        text.setAttribute("y", (a.y + b.y) / 2 - 5);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("font-size", "11");
+        text.setAttribute("fill", type === "optical" ? "#6d28d9" : "#0f766e");
+        text.textContent = load ? `${type[0].toUpperCase()} · ${load}` : type[0].toUpperCase();
+        svg.append(text);
+      });
+      chiplets.forEach(name => {
+        const p = point.get(name);
+        const circle = document.createElementNS(NS, "circle");
+        circle.setAttribute("cx", p.x); circle.setAttribute("cy", p.y); circle.setAttribute("r", "22");
+        circle.setAttribute("fill", "#1e3a5f"); circle.setAttribute("stroke", "white"); circle.setAttribute("stroke-width", "3");
+        svg.append(circle);
+        const text = document.createElementNS(NS, "text");
+        text.setAttribute("x", p.x); text.setAttribute("y", p.y + 5);
+        text.setAttribute("text-anchor", "middle"); text.setAttribute("fill", "white"); text.setAttribute("font-size", "13"); text.setAttribute("font-weight", "700");
+        text.textContent = name; svg.append(text);
+      });
+    }
+
+    document.querySelector("#build").addEventListener("click", createLinks);
+    document.querySelector("#run").addEventListener("click", runSimulation);
+    document.querySelector("#topology-preset").addEventListener("change", createLinks);
+    document.querySelector("#reset-distances").addEventListener("click", () => {
+      const distance = document.querySelector("#default-distance").value;
+      document.querySelectorAll("[data-distance]").forEach(input => {
+        input.value = distance;
+      });
+    });
+    document.querySelector("#interconnect-type").addEventListener("change", event => {
+      document.querySelector("#shared-optical").classList.toggle("hidden", event.target.value !== "optical");
+      document.querySelector("#shared-electrical").classList.toggle("hidden", event.target.value !== "electrical");
+      drawTopology();
+    });
+    document.querySelector("#links").addEventListener("change", event => {
+      if (event.target.matches("[data-enabled]")) drawTopology();
+    });
+    createSharedMetrics();
+    document.querySelector("#shared-optical").classList.toggle("hidden", true);
+    createLinks();
+  </script>
+</body>
+</html>
