@@ -94,7 +94,7 @@
       </section>
       <section>
         <h2>System-wide interconnect</h2>
-        <p class="help">The selected technology and parameter values are shared by every connected link. Effective bandwidth is the lower of aggregate data rate and bandwidth density × area.</p>
+        <p class="help">The selected technology and parameter values are shared by every connected link. Electrical aggregate rate = transfer rate × lane width × lane count. Optical aggregate rate = rate per wavelength × wavelengths per fiber × physical fibers/waveguides. Effective bandwidth is the lower of aggregate rate and bandwidth density × area.</p>
         <label>Interconnect type
           <select id="interconnect-type">
             <option value="electrical">Electrical</option>
@@ -137,7 +137,7 @@
   <script>
     const standardMetrics = [
       ["latency", "Base latency (ps)"],
-      ["data_rate", "Data rate per lane/channel (Gbit/s)"],
+      ["data_rate", "Electrical transfer rate (Gtransfer/s)"],
       ["bandwidth_density", "Bandwidth density (Gbit/s/mm²)"],
       ["area_footprint", "Interconnect area (mm²)"],
       ["energy_per_bit", "Energy per bit (pJ/bit)"],
@@ -145,12 +145,13 @@
       ["reach", "Maximum reach (mm)"]
     ];
     const electricalMetrics = [
-      ["lane_count", "Lane count"]
+      ["lane_count", "Lane count"],
+      ["lane_width", "Lane width (bits per transfer per lane)"]
     ];
     const opticalTechnologyMetrics = [
       ["wavelength", "Wavelength (nm)"],
-      ["wavelength_count", "Wavelength count"],
-      ["channel_count", "Channel count"]
+      ["wavelength_count", "Wavelengths per fiber"],
+      ["channel_count", "Physical fibers / waveguides"]
     ];
     const opticalMetrics = [
       ["electrical_to_optical_conversion_latency", "Electrical → optical latency (ps)"],
@@ -180,17 +181,32 @@
       const electrical = document.createElement("div");
       electrical.id = "shared-electrical";
       electrical.className = "optical-fields";
-      electrical.innerHTML = field("lane_count", "Lane count", 4).replace('type="number" step="any"', 'type="number" min="1" step="1"');
+      electrical.innerHTML = [
+        field("lane_count", "Lane count", 4),
+        field("lane_width", "Lane width (bits per transfer per lane)", 1)
+      ].map(markInteger).join("");
       standardHost.after(electrical);
       document.querySelectorAll("#shared-optical [data-metric='wavelength_count'], #shared-optical [data-metric='channel_count']")
         .forEach(input => {
           input.min = "1";
           input.step = "1";
         });
+      updateDataRateLabel();
     }
 
     function field(name, label, value) {
       return `<label>${label}<input data-metric="${name}" type="number" step="any" value="${value}"></label>`;
+    }
+
+    function markInteger(markup) {
+      return markup.replace('type="number" step="any"', 'type="number" min="1" step="1"');
+    }
+
+    function updateDataRateLabel() {
+      const label = document.querySelector("#shared-metrics [data-metric='data_rate']").closest("label");
+      label.firstChild.textContent = document.querySelector("#interconnect-type").value === "optical"
+        ? "Optical data rate per wavelength (Gbit/s)"
+        : "Electrical transfer rate (Gtransfer/s)";
     }
 
     async function createLinks() {
@@ -455,6 +471,7 @@
     document.querySelector("#interconnect-type").addEventListener("change", event => {
       document.querySelector("#shared-optical").classList.toggle("hidden", event.target.value !== "optical");
       document.querySelector("#shared-electrical").classList.toggle("hidden", event.target.value !== "electrical");
+      updateDataRateLabel();
       drawTopology();
     });
     document.querySelector("#links").addEventListener("change", event => {

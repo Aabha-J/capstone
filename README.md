@@ -27,8 +27,15 @@ copies of the equations.
 
 Current assumptions:
 
-- Electrical aggregate rate: `data_rate × lane_count`.
-- Optical aggregate rate: `data_rate × wavelength_count × channel_count`.
+- Electrical `data_rate` is the transfer rate per lane in Gtransfer/s.
+  Electrical aggregate rate in Gbit/s is
+  `data_rate × lane_width × lane_count`, where `lane_width` is the number of
+  bits transferred per transfer on each lane.
+- Optical `data_rate` is in Gbit/s per wavelength.
+  `wavelength_count` is the number of wavelengths carried per fiber, and
+  `channel_count` is the number of physical transmit fibers or waveguides.
+  Optical aggregate rate is
+  `data_rate × wavelength_count × channel_count`.
 - Effective bandwidth: `min(aggregate rate, bandwidth_density × area_footprint)`.
 - Packet serialization latency: `packet_size_bits / effective_bandwidth`, with
   the Gbit/s-to-ns-to-ps conversion applied.
@@ -66,7 +73,11 @@ the expression can be evaluated symbolically.
 | Quantity | Unit |
 | --- | --- |
 | Latency and optical conversion latency | ps |
-| Data rate and effective bandwidth | Gbit/s |
+| Electrical transfer rate | Gtransfer/s |
+| Optical rate per wavelength and effective bandwidth | Gbit/s |
+| Electrical lane width | bits/transfer/lane |
+| Electrical lane count | lanes |
+| Optical wavelength and fiber/waveguide counts | wavelengths/fiber; fibers/waveguides |
 | Bandwidth density | Gbit/s/mm² |
 | Area footprint | mm² |
 | Energy per bit | pJ/bit |
@@ -98,8 +109,8 @@ The Python API also exposes `InterconnectGraph.from_topology(...)` and
   interconnect definitions from a documented data format; validate parameter
   names, units, and required fields.
 - **TBD — Simulation sweeps:** Define sweep dimensions such as topology,
-  link distances, data rate, lane/wavelength/channel counts, packet size, and
-  traffic configuration.
+  link distances, data rate, electrical lane width/count, optical wavelength
+  and fiber/waveguide counts, packet size, and traffic configuration.
 - **TBD — Comparable iterations:** Reuse the same generated traffic matrix
   across every sweep point and record the exact parameters and seed.
 - **TBD — Results storage and export:** Save each iteration’s input settings

@@ -130,11 +130,15 @@ class InterconnectGraph:
     Packets are routed independently; this model does not simulate queuing or
     contention. Bandwidth and latency must use consistent time units. If a
     metric is unknown, results retain it as a symbolic Calculation. Latency
-    is measured in ps, data rates in Gbit/s, energy in pJ/bit, and link
-    distances/reach in mm. Effective bandwidth is the minimum of data_rate
-    times technology counts and bandwidth_density times area_footprint. A
-    link is excluded when its known distance exceeds the interconnect's known
-    reach.
+    is measured in ps, effective bandwidth in Gbit/s, energy in pJ/bit, and
+    link distances/reach in mm. Electrical data_rate is in Gtransfer/s and its
+    aggregate rate is data_rate * lane_width * lane_count. Optical data_rate
+    is in Gbit/s per wavelength and its aggregate rate is
+    data_rate * wavelength_count * channel_count, with wavelength_count per
+    fiber and channel_count as physical fibers or waveguides. Effective
+    bandwidth is the minimum of this aggregate rate and bandwidth_density
+    times area_footprint. A link is excluded when its known distance exceeds
+    the interconnect's known reach.
     """
 
     def __init__(self) -> None:
@@ -358,18 +362,26 @@ class InterconnectGraph:
                 minimum=1,
                 integer=True,
             )
+            cls._validated_parameter(
+                interconnect.lane_width,
+                "lane_width",
+                source,
+                destination,
+                minimum=1,
+                integer=True,
+            )
         else:
             cls._validated_parameter(
-                interconnect.wavelength_count,
-                "wavelength_count",
+                interconnect.channel_count,
+                "channel_count",
                 source,
                 destination,
                 minimum=1,
                 integer=True,
             )
             cls._validated_parameter(
-                interconnect.channel_count,
-                "channel_count",
+                interconnect.wavelength_count,
+                "wavelength_count",
                 source,
                 destination,
                 minimum=1,

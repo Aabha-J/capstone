@@ -312,12 +312,17 @@ class ParameterSet:
 
 
 class ElectricalParameters(ParameterSet):
-    """Electrical link quantities, including shared metrics and lane count."""
+    """Electrical link quantities, including transfer width and lane count."""
 
     parameter_type = ElectricalParameter
-    # Electrical-only fields are added to the shared fields above.
-    parameters = ParameterSet.common_parameters + ("lane_count",)
-    parameter_units = ParameterSet.parameter_units | {"lane_count": "lanes"}
+    # Electrical data_rate is a transfer rate; lane width converts transfers
+    # into bits, then lane_count accounts for parallel electrical lanes.
+    parameters = ParameterSet.common_parameters + ("lane_count", "lane_width")
+    parameter_units = ParameterSet.parameter_units | {
+        "data_rate": "Gtransfer/s",
+        "lane_count": "lanes",
+        "lane_width": "bits/transfer/lane",
+    }
 
 
 class OpticalParameters(ParameterSet):
@@ -336,6 +341,7 @@ class OpticalParameters(ParameterSet):
         "optical_to_electrical_conversion_latency",
     )
     parameter_units = ParameterSet.parameter_units | {
+        "data_rate": "Gbit/s/wavelength",
         "wavelength": "nm",
         "wavelength_count": "wavelengths",
         "channel_count": "channels",
@@ -376,6 +382,7 @@ class Interconnect:
                 bandwidth_density=self.bandwidth_density,
                 area_footprint=self.area_footprint,
                 lane_count=self.lane_count,
+                lane_width=self.lane_width,
                 optical=False,
             )
         if isinstance(self, OpticalInterconnect):

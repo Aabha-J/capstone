@@ -4,9 +4,14 @@ Per packet, the simulator evaluates each traversed edge in this order:
 
 1. Exclude the edge if known ``distance_mm > reach_mm``.
 2. Compute effective edge bandwidth:
-   ``min(data_rate * technology_count, bandwidth_density * area_footprint)``.
-   ``technology_count`` is ``lane_count`` electrically and
-   ``wavelength_count * channel_count`` optically.
+   ``min(aggregate_rate, bandwidth_density * area_footprint)``.
+   Electrical aggregate rate is ``data_rate * lane_width * lane_count``,
+   where data_rate is in Gtransfer/s and lane_width is bits per transfer per
+   lane. Optical aggregate rate is
+   ``data_rate * wavelength_count * channel_count``, where data_rate is
+   Gbit/s per wavelength, wavelength_count is the number of wavelengths
+   carried per fiber, and channel_count is the number of physical fibers or
+   waveguides.
 3. Add edge latency: ``base_latency_ps + 1000 * packet_bits / bandwidth_gbps``.
    Optical edges additionally add both conversion latencies.
 4. Add edge energy: ``packet_bits * edge_energy_per_bit``. Optical edges add
@@ -46,25 +51,30 @@ def effective_bandwidth(
     area_footprint: MetricInput,
     optical: bool,
     lane_count: MetricInput | None = None,
+    lane_width: MetricInput | None = None,
     wavelength_count: MetricInput | None = None,
     channel_count: MetricInput | None = None,
 ) -> MetricResult:
     """Return effective edge capacity in Gbit/s, preserving unknowns.
 
-    Electrical aggregate rate is ``data_rate * lane_count``. Optical
-    aggregate rate is ``data_rate * wavelength_count * channel_count``.
-    The area limit is ``bandwidth_density * area_footprint``. The edge
-    capacity is the smaller limit. Unknown terms remain in a symbolic
-    ``min(...)`` expression instead of being treated as zero.
+    Electrical ``data_rate`` is in Gtransfer/s and aggregate rate is
+    ``data_rate * lane_width * lane_count``. Optical ``data_rate`` is in
+    Gbit/s per wavelength. Optical aggregate rate is
+    ``data_rate * wavelength_count * channel_count``, where wavelength_count
+    is wavelengths per fiber and channel_count is the count of physical
+    fibers/waveguides. The area limit is
+    ``bandwidth_density * area_footprint``. The edge capacity is the smaller
+    limit. Unknown terms remain in a symbolic ``min(...)`` expression
+    instead of being treated as zero.
     """
     if optical:
         if wavelength_count is None or channel_count is None:
             raise ValueError("Optical bandwidth needs wavelength_count and channel_count.")
         aggregate_rate = data_rate * wavelength_count * channel_count
     else:
-        if lane_count is None:
-            raise ValueError("Electrical bandwidth needs lane_count.")
-        aggregate_rate = data_rate * lane_count
+        if lane_count is None or lane_width is None:
+            raise ValueError("Electrical bandwidth needs lane_count and lane_width.")
+        aggregate_rate = data_rate * lane_width * lane_count
 
     area_limited_rate = bandwidth_density * area_footprint
     if isinstance(aggregate_rate, Real) and isinstance(area_limited_rate, Real):
