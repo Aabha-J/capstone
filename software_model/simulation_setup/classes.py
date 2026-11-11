@@ -19,78 +19,9 @@ class LatencyComponent:
 
 
 @dataclass
-class Link:
-    """Represents the interconnect properties of a link."""
-
-    interconnect_type: InterconnectType
-
-    bandwidth: Optional[float] = None       # GB/s
-    energy_per_bit: Optional[float] = None  # pJ/bit
-    area: Optional[float] = None            # mm^2
-
-    reported_total_latency: Optional[float] = None  # ns
-
-    latency_components: list[LatencyComponent] = field(default_factory=list)
-
-    @property
-    def known_latency(self) -> Optional[float]:
-        if not self.latency_components:
-            return None
-
-        return sum(component.value for component in self.latency_components)
-
-    @property
-    def calculated_total_latency(self) -> Optional[float]:
-        required = {
-            LatencyType.PHY,
-            LatencyType.PROPAGATION
-        }
-
-        if self.interconnect_type == InterconnectType.OPTICAL:
-            required.update({
-                LatencyType.EO_CONVERSION,
-                LatencyType.OE_CONVERSION
-            })
-
-        available = {
-            component.latency_type
-            for component in self.latency_components
-        }
-
-        if not required.issubset(available):
-            return None
-
-        return sum(
-            component.value
-            for component in self.latency_components
-            if component.latency_type in required
-        )
-
-    @property
-    def total_latency(self) -> Optional[float]:
-        if self.reported_total_latency is not None:
-            #if  reported latency is available, use it
-            return self.reported_total_latency
-
-        return self.calculated_total_latency
-
-@dataclass
 class Vertex:
     """Represents a chiplet in the graph."""
     chiplet_id: int
-
-
-from dataclasses import dataclass, field
-from typing import Optional
-
-
-@dataclass
-class LatencyComponent:
-    """Stores a latency value and where it came from."""
-
-    name: str #type of latency component (e.g., phy_latency, propagation_delay, etc.)
-    value: float
-
 
 @dataclass
 class Link:
@@ -124,7 +55,6 @@ class Edge:
     link: Link
 
 
-@dataclass
 class Graph:
     """Represents a chiplet interconnect graph."""
 
@@ -147,7 +77,6 @@ class PacketEvent:
     packet_size: int        # bytes
 
 
-@dataclass
 class TrafficTrace:
     """Stores the packet events generated for an experiment."""
 
@@ -163,7 +92,6 @@ class RoutingEntry:
     path: list[int]
 
 
-@dataclass
 class RoutingTable:
     entries: list[RoutingEntry] = field(default_factory=list)
 
