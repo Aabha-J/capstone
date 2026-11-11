@@ -1,4 +1,6 @@
-data_loader_test.py
+Run all tests: python -m pytest software_model/tests/ -v
+
+experiment_config_loader_test.py
 Run with: python -m pytest software_model/tests/data/interconnect_data_loader_test.py -v (from capstone folder)
 1. Clean JSON loading: Verifies both electrical and optical interconnects load correctly, including all field values and enum conversions.
 2. Missing optional parameters: Confirms missing optional fields are accepted when reported bandwidth and total latency are available.
@@ -17,3 +19,21 @@ Run with: python -m pytest software_model/tests/data/interconnect_data_loader_te
 15. Technology-specific parameters: Checks that electrical interconnects cannot specify optical conversion latency.
 16. Invalid JSON structure: Verifies malformed root structures, missing `interconnects`, and non-list `interconnects` are rejected.
 17. Missing JSON file: Checks that loading a nonexistent file raises `FileNotFoundError`.
+
+
+interconnect_data_loader_test
+1.Expand array.
+2.Expand integer range.
+3.Expand float range.
+4.Reject invalid range (zero step).
+5.Reject empty array.
+6.Create valid experiment options.
+7.Reject invalid topology.
+8.Reject invalid traffic pattern.
+9.Reject invalid injection rate.
+10.Reject duplicate option values.
+11.Generate experiment configurations.
+12.Verify hotspot parameters only apply to hotspot traffic.
+13.Verify configuration IDs are unique.
+14.Load experiment configurations from JSON.
+15.Reject missing experiment_options.

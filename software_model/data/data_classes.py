@@ -84,16 +84,18 @@ class ExperimentConfig:
 
     # Simulation settings
     chiplet_count: int
-    topology: str
+    topology: Topology
     link_distance: float
 
     # Traffic properties
-    traffic_pattern: str
+    traffic_pattern: TrafficPattern
     packet_size: int
     injection_rate: float
-    hotspot_count: Optional[int]
-    hotspot_probability: Optional[float]
 
     # Execution settings
     duration: float
     seed: int
+
+    #Optional hotspot parameters
+    hotspot_count: Optional[int] = None
+    hotspot_probability: Optional[float] = None
