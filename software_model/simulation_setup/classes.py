@@ -2,8 +2,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
-from ...data.data_classes import InterconnectType
-
+from ..data.data_classes import InterconnectType
 class LatencyType(Enum):
     PHY = "phy_latency"
     PROPAGATION = "propagation_delay"
@@ -26,7 +25,7 @@ class Vertex:
 @dataclass
 class Link:
     """Represents the interconnect properties of a link."""
-
+    interconnect_type: InterconnectType
     bandwidth: Optional[float] = None       # GB/s
     energy_per_bit: Optional[float] = None  # pJ/bit
     area: Optional[float] = None            # mm^2
@@ -58,8 +57,9 @@ class Edge:
 class Graph:
     """Represents a chiplet interconnect graph."""
 
-    vertices: list[Vertex] = field(default_factory=list)
-    edges: list[Edge] = field(default_factory=list)
+    def __init__(self):
+        self.vertices: list[Vertex] = []
+        self.edges: list[Edge] = []
 
     def add_vertex(self, vertex: Vertex) -> None:
         self.vertices.append(vertex)
@@ -78,9 +78,8 @@ class PacketEvent:
 
 
 class TrafficTrace:
-    """Stores the packet events generated for an experiment."""
-
-    events: list[PacketEvent] = field(default_factory=list)
+    def __init__(self):
+        self.events: list[PacketEvent] = []
 
     def add_event(self, event: PacketEvent) -> None:
         self.events.append(event)
@@ -93,7 +92,8 @@ class RoutingEntry:
 
 
 class RoutingTable:
-    entries: list[RoutingEntry] = field(default_factory=list)
+    def __init__(self):
+        self.entries: list[RoutingEntry] = []
 
     def add_entry(self, entry: RoutingEntry) -> None:
         self.entries.append(entry)
