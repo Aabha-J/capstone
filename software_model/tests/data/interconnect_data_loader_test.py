@@ -1,6 +1,4 @@
 
-# software_model/tests/test_data_loader.py
-
 import copy
 import json
 

@@ -1,5 +1,5 @@
 data_loader_test.py
-Run with: python -m pytest software_model/tests/data_loader_test.py -v
+Run with: python -m pytest software_model/tests/data/interconnect_data_loader_test.py -v (from capstone folder)
 1. Clean JSON loading: Verifies both electrical and optical interconnects load correctly, including all field values and enum conversions.
 2. Missing optional parameters: Confirms missing optional fields are accepted when reported bandwidth and total latency are available.
 3. Bandwidth discrepancy: Checks that mismatches between reported and calculated bandwidth raise errors for both interconnect types.
