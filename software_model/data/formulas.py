@@ -3,7 +3,11 @@ from .data_classes import InterconnectType
 
 
 def calculate_bandwidth(interconnect) -> float | None:
-    """Calculate bandwidth from PHY parameters only."""
+    """
+    Calculate aggregate raw bandwidth in GB/s.
+
+    Assumes data_rate_per_lane is in Gb/s.
+    """
 
     rate = interconnect.data_rate_per_lane
 
@@ -15,17 +19,26 @@ def calculate_bandwidth(interconnect) -> float | None:
         if interconnect.lane_width is None:
             return None
 
-        return rate * interconnect.lane_width
+        bandwidth_gbps = rate * interconnect.lane_width
 
     elif interconnect.interconnect_type == InterconnectType.OPTICAL:
 
-        if (interconnect.channel_count is None or
-                interconnect.wavelength_count is None):
+        if (
+            interconnect.channel_count is None
+            or interconnect.wavelength_count is None
+        ):
             return None
 
-        return rate * interconnect.channel_count * interconnect.wavelength_count
+        bandwidth_gbps = (
+            rate
+            * interconnect.channel_count
+            * interconnect.wavelength_count
+        )
 
-    return None
+    else:
+        return None
+
+    return bandwidth_gbps / 8
 
 
 def calculate_total_latency(interconnect) -> float | None:

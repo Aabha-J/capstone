@@ -28,15 +28,22 @@ class Interconnect:
     interconnect_type: InterconnectType
 
     # General parameters
+    #Gbps
     data_rate_per_lane: Optional[float] = None
+
+    #GB/s
     bandwidth: Optional[float] = None
+
+    #pJ/bit
     energy_per_bit: Optional[float] = None
+
+    #mm/mm2
     reach: Optional[float] = None
     area: Optional[float] = None
 
     total_latency: Optional[float] = None
 
-    #Latency
+    #Latency (ns)
     phy_latency: Optional[float] = None
     propagation_delay: Optional[float] = None
 
