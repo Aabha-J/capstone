@@ -1,0 +1,50 @@
+{
+    "experiment_options": {
+        "chiplet_counts": {
+            "start": 1,
+            "stop": 3,
+            "step": 1
+        },
+        "topologies": [
+            "Mesh",
+            "Ring",
+            "Direct"
+        ],
+        "link_distances": [
+            1.0,
+            2.0,
+            3.0
+        ],
+        "traffic_patterns": [
+            "uniform",
+            "random",
+            "hotspot"
+        ],
+        "packet_sizes": [
+            64,
+            128,
+            256
+        ],
+        "injection_rates": [
+            0.1,
+            0.2,
+            0.3
+        ],
+        "hotspot_counts": [
+            1,
+            2
+        ],
+        "hotspot_probabilities": [
+            0.1,
+            0.2
+        ],
+        "durations": [
+            10000        
+        ],
+        "seeds": [
+            1,
+            2,
+            3
+        ]
+    }
+}
