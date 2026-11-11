@@ -1,0 +1,19 @@
+data_loader_test.py
+Run with: python -m pytest software_model/tests/data_loader_test.py -v
+1. Clean JSON loading: Verifies both electrical and optical interconnects load correctly, including all field values and enum conversions.
+2. Missing optional parameters: Confirms missing optional fields are accepted when reported bandwidth and total latency are available.
+3. Bandwidth discrepancy: Checks that mismatches between reported and calculated bandwidth raise errors for both interconnect types.
+4. Missing bandwidth: Verifies loading fails when bandwidth is neither reported nor calculable.
+5. Calculated bandwidth: Confirms bandwidth is calculated when it is not reported but sufficient parameters are available.
+6. Latency discrepancy: Checks that mismatches between reported and calculated total latency raise errors for both interconnect types.
+7. Calculated total latency: Confirms total latency is calculated when it is not reported but all required components are available.
+8. Unavailable total latency: Verifies total latency remains `None` when neither a reported value nor sufficient components are available.
+9. Reported latency with missing components: Confirms reported total latency is retained when individual latency components are unavailable.
+10. Missing required fields: Checks that missing interconnect ID, type, or source is rejected.
+11. Invalid interconnect type: Verifies unsupported interconnect types are rejected.
+12. Unknown parameters: Checks that unrecognized JSON fields are rejected.
+13. Duplicate interconnect IDs: Verifies duplicate IDs are rejected.
+14. Duplicate sources: Verifies duplicate source references are rejected.
+15. Technology-specific parameters: Checks that electrical interconnects cannot specify optical conversion latency.
+16. Invalid JSON structure: Verifies malformed root structures, missing `interconnects`, and non-list `interconnects` are rejected.
+17. Missing JSON file: Checks that loading a nonexistent file raises `FileNotFoundError`.
