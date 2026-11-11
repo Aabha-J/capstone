@@ -1,7 +1,11 @@
 #for now just loads and prints experiment config json file and interconnect
 from pathlib import Path
-from .data.interconnect_data_loader import load_interconnects
-from .data.experiment_config_loader import load_experiment_configs
+if __package__:
+    from .data.interconnect_data_loader import load_interconnects
+    from .data.experiment_config_loader import load_experiment_configs
+else:
+    from data.interconnect_data_loader import load_interconnects
+    from data.experiment_config_loader import load_experiment_configs
 
 
 def main():

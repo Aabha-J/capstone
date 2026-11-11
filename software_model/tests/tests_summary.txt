@@ -1,4 +1,4 @@
-Needs venv: .\venv\Scripts\Activate.ps1
+Needs venv: .venv\Scripts\Activate.ps1
 Run all tests: python -m pytest software_model/tests/ -v
 
 experiment_config_loader_test.py
