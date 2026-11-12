@@ -1,11 +1,9 @@
 #for now just loads and prints experiment config json file and interconnect
 from pathlib import Path
-if __package__:
-    from .data.interconnect_data_loader import load_interconnects
-    from .data.experiment_config_loader import load_experiment_configs
-else:
-    from data.interconnect_data_loader import load_interconnects
-    from data.experiment_config_loader import load_experiment_configs
+
+from .data.interconnect_data_loader import load_interconnects
+from .data.experiment_config_loader import load_experiment_configs
+from .simulation_setup.generate_graph import generate_graph
 
 
 def main():
@@ -14,30 +12,45 @@ def main():
     experiment_options_file = Path(__file__).with_name("experiment_configs.json")
 
     # Load interconnects
-    interconnects, bandwidth_report = load_interconnects(interconnects_file)
+    interconnects, validation_report = load_interconnects(interconnects_file)
 
     # Load experiment configurations
     options, experiment_configs = load_experiment_configs(
         experiment_options_file
     )
 
-    # Print interconnects
-    print("\n=== Interconnects ===")
+    # Print validation results
+    print("\n=== Interconnect Validation ===")
+    for report in validation_report:
+        print(f"\nInterconnect: {report['interconnect_id']}")
+        print(f"Bandwidth: {report['bandwidth']}")
+        print(f"Total Latency: {report['total_latency']}")
+
+    # Generate a graph for each interconnect/configuration combination
+    graphs = []
+
     for interconnect in interconnects:
-        print(interconnect)
+        for config in experiment_configs:
+            graph = generate_graph(interconnect, config)
 
-    print("\n=== Bandwidth Validation ===")
-    for report in bandwidth_report:
-        print(report)
+            graphs.append({
+                "interconnect_id": interconnect.interconnect_id,
+                "config_id": config.config_id,
+                "graph": graph,
+            })
 
-    # Print experiment options
-    print("\n=== Experiment Options ===")
-    print(options)
+    print(f"\nGenerated {len(graphs)} graphs.")
 
-    # Print generated experiment configurations
-    print(f"\n=== Experiment Configurations ({len(experiment_configs)}) ===")
-    for config in experiment_configs:
-        print(config)
+    # Print graph summaries
+    for result in graphs:
+        graph = result["graph"]
+
+        print(
+            f"\nInterconnect: {result['interconnect_id']}"
+            f"\nConfiguration: {result['config_id']}"
+            f"\nVertices: {len(graph.vertices)}"
+            f"\nEdges: {len(graph.edges)}"
+        )
 
 
 if __name__ == "__main__":
