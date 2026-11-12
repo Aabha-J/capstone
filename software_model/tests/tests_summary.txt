@@ -38,3 +38,17 @@ interconnect_data_loader_test
 13.Verify configuration IDs are unique.
 14.Load experiment configurations from JSON.
 15.Reject missing experiment_options.
+
+generate_graph_test.py
+
+1. test_generate_graph_vertex_count — verifies each topology produces the requested number of vertices for mesh, ring, and direct graphs.
+2. test_mesh_edge_count — checks the exact number of edges generated for mesh topologies across chiplet counts.
+3. test_ring_edge_count — validates the ring topology edge count, including closed-ring behavior for larger graphs and special cases for 1 and 2 chiplets.
+4. test_direct_edge_count — confirms every chiplet connects to every other chiplet in a direct topology.
+5. test_graph_has_no_duplicate_or_self_edges — ensures there are no self-loops and no duplicate edge pairs.
+6. test_edge_distance_is_copied_from_config — checks that each generated edge uses the configured link distance.
+7. test_link_properties_are_copied — verifies interconnect bandwidth, energy per bit, area, and total latency are transferred to graph links.
+8. test_partial_latency_components_are_preserved — confirms known latency components remain set when total latency cannot be calculated.
+9. test_missing_link_properties_are_preserved — ensures missing interconnect properties stay as None while valid total latency is retained.
+10. test_optical_total_latency_includes_conversion — confirms optical total latency includes both conversion latency components.
+11. visualize_small_graphs - display a 4 chiplet ring, mesh, direct topoplogy with mathplotlib (an extra check-python -m software_model.tests.simulation_setup.generate_graph_test)
