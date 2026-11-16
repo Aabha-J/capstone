@@ -1,35 +1,8 @@
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
-
-class MeasurementScope(Enum):
-    AGGREGATE = "aggregate"
-    COMPONENT = "component"
-
-
-class MeasurementOrigin(Enum):
-    REPORTED = "reported"
-    CALCULATED = "calculated"
-
-
-class MeasurementStatus(Enum):
-    COMPLETE = "complete"
-    PARTIAL = "partial"
-    UNAVAILABLE = "unavailable"
-
-@dataclass
-class Metric:
-    value: Optional[float] = None
-    unit: Optional[str] = None
-
-    scope: Optional[MeasurementScope] = None
-    origin: Optional[MeasurementOrigin] = None
-    status: MeasurementStatus = MeasurementStatus.UNAVAILABLE
-
-    source: Optional[str] = None
-    notes: Optional[str] = None
-
+from software_model.data.metrics import AggregateMetric, Metric
 
 class InterconnectType(Enum):
     OPTICAL = "optical"
@@ -49,11 +22,11 @@ class TrafficPattern(Enum):
 @dataclass
 class Transmitter:
 
-    # Common TX / SERDES parameters
-    energy_per_bit: Optional[Metric] = None  # pJ/bit
-    latency: Optional[Metric] = None  # ns
-    power: Optional[Metric] = None  # W
-    area: Optional[Metric] = None  # mm²
+    # Common TX / SERDES aggregates
+    energy_per_bit: AggregateMetric = field(default_factory=AggregateMetric)  # pJ/bit
+    latency: AggregateMetric = field(default_factory=AggregateMetric)  # ns
+    power: AggregateMetric = field(default_factory=AggregateMetric)  # W
+    area: AggregateMetric = field(default_factory=AggregateMetric)  # mm²
 
     # Electrical TX parameters
     output_impedance: Optional[Metric] = None  # Ohms
@@ -72,11 +45,11 @@ class Transmitter:
 @dataclass
 class Receiver:
 
-    # Common RX / SERDES parameters
-    energy_per_bit: Optional[Metric] = None  # pJ/bit
-    latency: Optional[Metric] = None  # ns
-    power: Optional[Metric] = None  # W
-    area: Optional[Metric] = None  # mm²
+    # Common RX / SERDES aggregates
+    energy_per_bit: AggregateMetric = field(default_factory=AggregateMetric)  # pJ/bit
+    latency: AggregateMetric = field(default_factory=AggregateMetric)  # ns
+    power: AggregateMetric = field(default_factory=AggregateMetric)  # W
+    area: AggregateMetric = field(default_factory=AggregateMetric)  # mm²
 
     # Electrical RX parameters
     input_impedance: Optional[Metric] = None  # Ohms
@@ -134,17 +107,13 @@ class Interconnect:
     wavelength_count: Optional[int] = None
 
     # Aggregate energy, power, and area
-    energy_per_bit: Optional[Metric] = None  # pJ/bit
-    power: Optional[Metric] = None  # W
-    area: Optional[Metric] = None  # mm²
+    energy_per_bit: AggregateMetric = field(default_factory=AggregateMetric)  # pJ/bit
+    power: AggregateMetric = field(default_factory=AggregateMetric)  # W
+    area: AggregateMetric = field(default_factory=AggregateMetric)  # mm²
 
     # Aggregate latency
-    phy_latency: Optional[Metric] = None  # ns: aggregate TX + RX PHY latency
-    total_latency: Optional[Metric] = None  # ns: total link latency
-
-    #Agregate means the papers reported these all together
-    #If only seperate components are reported 
-    #Keep track within the specific channel, receiver, or trasmitter class
+    phy_latency: AggregateMetric = field(default_factory=AggregateMetric)  # ns
+    total_latency: AggregateMetric = field(default_factory=AggregateMetric)  # ns
 
     # Component parameters
     transmitter: Optional[Transmitter] = None
