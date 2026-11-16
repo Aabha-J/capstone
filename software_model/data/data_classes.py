@@ -3,6 +3,33 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+class MeasurementScope(Enum):
+    AGGREGATE = "aggregate"
+    COMPONENT = "component"
+
+
+class MeasurementOrigin(Enum):
+    REPORTED = "reported"
+    CALCULATED = "calculated"
+
+
+class MeasurementStatus(Enum):
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    UNAVAILABLE = "unavailable"
+
+@dataclass
+class Metric:
+    value: Optional[float] = None
+    unit: Optional[str] = None
+
+    scope: Optional[MeasurementScope] = None
+    origin: Optional[MeasurementOrigin] = None
+    status: MeasurementStatus = MeasurementStatus.UNAVAILABLE
+
+    source: Optional[str] = None
+    notes: Optional[str] = None
+
 
 class InterconnectType(Enum):
     OPTICAL = "optical"
@@ -19,6 +46,69 @@ class TrafficPattern(Enum):
     RANDOM = "random"
     HOTSPOT = "hotspot"
 
+@dataclass
+class Transmitter:
+
+    # Common TX / SERDES parameters
+    energy_per_bit: Optional[Metric] = None  # pJ/bit
+    latency: Optional[Metric] = None  # ns
+    power: Optional[Metric] = None  # W
+    area: Optional[Metric] = None  # mm²
+
+    # Electrical TX parameters
+    output_impedance: Optional[Metric] = None  # Ohms
+    voltage_swing: Optional[Metric] = None  # V
+    equalization: Optional[Metric] = None
+
+    # Optical TX parameters
+    modulator_energy_per_bit: Optional[Metric] = None  # pJ/bit
+    modulator_insertion_loss: Optional[Metric] = None  # dB
+    extinction_ratio: Optional[Metric] = None  # dB
+    laser_power: Optional[Metric] = None  # W: electrical laser input power
+    laser_efficiency: Optional[Metric] = None  # Fraction (0-1)
+    eo_conversion_latency: Optional[Metric] = None  # ns
+
+
+@dataclass
+class Receiver:
+
+    # Common RX / SERDES parameters
+    energy_per_bit: Optional[Metric] = None  # pJ/bit
+    latency: Optional[Metric] = None  # ns
+    power: Optional[Metric] = None  # W
+    area: Optional[Metric] = None  # mm²
+
+    # Electrical RX parameters
+    input_impedance: Optional[Metric] = None  # Ohms
+    equalization: Optional[Metric] = None
+
+    # Optical RX parameters
+    responsivity: Optional[Metric] = None  # A/W
+    sensitivity: Optional[Metric] = None  # dBm
+    input_capacitance: Optional[Metric] = None  # pF
+    oe_conversion_latency: Optional[Metric] = None  # ns
+
+    # Reliability
+    target_ber: Optional[Metric] = None  # BER (unitless probability)
+
+
+@dataclass
+class Channel:
+
+    link_length: Optional[Metric] = None  # mm
+    reach: Optional[Metric] = None  # mm
+    propagation_delay: Optional[Metric] = None  # ns
+    area: Optional[Metric] = None  # mm²
+
+    # Optical channel parameters
+    propagation_loss: Optional[Metric] = None  # dB
+    coupling_loss: Optional[Metric] = None  # dB
+
+    # Electrical channel parameters
+    insertion_loss: Optional[Metric] = None  # dB
+    characteristic_impedance: Optional[Metric] = None  # Ohms
+    crosstalk: Optional[Metric] = None  # Source-defined unit
+
 
 @dataclass
 class Interconnect:
@@ -27,39 +117,39 @@ class Interconnect:
     interconnect_id: str
     interconnect_type: InterconnectType
 
-    # General parameters
-    #Gbps
-    data_rate_per_lane: Optional[float] = None
+    # Signaling format
+    modulation_format: Optional[str] = None  # NRZ, PAM4, PAM8
+    bits_per_symbol: Optional[int] = None
 
-    #GB/s
-    bandwidth: Optional[float] = None
+    # Signaling rate
+    symbol_rate: Optional[Metric] = None  # GBaud
+    data_rate_per_lane: Optional[Metric] = None  # Gbps
+    bandwidth: Optional[Metric] = None  # GB/s
 
-    #pJ/bit
-    energy_per_bit: Optional[float] = None
-
-    #mm/mm2
-    reach: Optional[float] = None
-    area: Optional[float] = None
-
-    total_latency: Optional[float] = None
-
-    #Latency (ns)
-    phy_latency: Optional[float] = None
-    propagation_delay: Optional[float] = None
-
-
-
-    # Electrical parameters
+    # Electrical configuration
     lane_width: Optional[int] = None
 
-    # Optical parameters
+    # Optical configuration
     channel_count: Optional[int] = None
     wavelength_count: Optional[int] = None
 
-    #Latency (optical only)
-    oe_conversion_latency: Optional[int] = None
-    eo_conversion_latency: Optional[int] = None
+    # Aggregate energy, power, and area
+    energy_per_bit: Optional[Metric] = None  # pJ/bit
+    power: Optional[Metric] = None  # W
+    area: Optional[Metric] = None  # mm²
 
+    # Aggregate latency
+    phy_latency: Optional[Metric] = None  # ns: aggregate TX + RX PHY latency
+    total_latency: Optional[Metric] = None  # ns: total link latency
+
+    #Agregate means the papers reported these all together
+    #If only seperate components are reported 
+    #Keep track within the specific channel, receiver, or trasmitter class
+
+    # Component parameters
+    transmitter: Optional[Transmitter] = None
+    channel: Optional[Channel] = None
+    receiver: Optional[Receiver] = None
 
     # Metadata
     source: Optional[str] = None

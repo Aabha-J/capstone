@@ -2,7 +2,7 @@
 
 Run from the repository root:
     python -m pip install streamlit
-    python -m streamlit run capstone_performance_gui.py
+    python -m streamlit run capstone_dashboard_enhanced.py --server.port 8080
 
 This UI uses the existing simulate() and analyze() functions. It builds
 minimal input objects with the attributes those functions expect, so it can
