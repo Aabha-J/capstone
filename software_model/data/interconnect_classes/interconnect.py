@@ -54,8 +54,6 @@ class Interconnect:
     notes: Optional[str] = None
 
     def calculate_energy_per_bit(self):
-        """Calculate total interconnect energy per bit."""
-
         calculate_aggregate_sum(
             aggregate=self.energy_per_bit,
             parts=(
@@ -80,8 +78,6 @@ class Interconnect:
 
 
     def calculate_area(self):
-        """Calculate total interconnect area."""
-
         calculate_aggregate_sum(
             aggregate=self.area,
             parts=(

@@ -40,22 +40,3 @@ def calculate_bandwidth(interconnect) -> float | None:
 
     return bandwidth_gbps / 8
 
-
-def calculate_total_latency(interconnect) -> float | None:
-    """Calculate total latency if all required components are available."""
-
-    components = [
-        interconnect.phy_latency,
-        interconnect.propagation_delay
-    ]
-
-    if interconnect.interconnect_type == InterconnectType.OPTICAL:
-        components.extend([
-            interconnect.eo_conversion_latency,
-            interconnect.oe_conversion_latency
-        ])
-
-    if any(component is None for component in components):
-        return None
-
-    return sum(components)

@@ -21,7 +21,7 @@ class Transmitter:
     power: AggregateMetric = field(default_factory=AggregateMetric)  # W
     area: AggregateMetric = field(default_factory=AggregateMetric)  # mm²
 
-    # Individual component measurements for each agreagte
+    # Individual component measurements for each aggregate
     components: dict[str, dict[str, Optional[Metric]]] = field(default_factory=dict)
 
     # Electrical TX parameters
@@ -51,9 +51,8 @@ class Transmitter:
             )
         }
 
-    #needs to be called after creation
     def calculate_aggregates(self):
-        """Calculate receiver aggregate measurements from its components."""
+        """Calculate transmitter aggregate measurements from its components."""
 
         parts = TRANSMITTER_PARTS[self.interconnect_type]
 

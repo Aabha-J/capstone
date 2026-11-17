@@ -16,11 +16,9 @@ class MeasurementStatus(Enum):
 class Metric:
     """Stores one individual measurement."""
 
-    value: Optional[float] = None  # Numerical value
-    unit: Optional[str] = None  # Unit (e.g., ns, pJ/bit, mm²)
-
-    source: Optional[str] = None  # Source of the reported measurement
-    notes: Optional[str] = None  # Additional context about the measurement
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    notes: Optional[str] = None
 
 
 @dataclass
@@ -83,9 +81,13 @@ def calculate_aggregate_sum(
     if aggregate.reported is not None:
         return aggregate
 
+    # Clear previous calculated results before recalculating.
+    aggregate.calculated_total = None
+    aggregate.partial_total = None
+
     available = [
         part for part in parts
-        if part is not None and part.value is not None
+        if part is not None
     ]
 
     if not available:
@@ -99,7 +101,6 @@ def calculate_aggregate_sum(
     total = Metric(
         value=sum(part.value for part in available),
         unit=unit,
-        source="calculated",
         notes=formula,
     )
 

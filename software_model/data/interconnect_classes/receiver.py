@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass, field
 
 from software_model.data.enums import InterconnectType
@@ -20,7 +19,7 @@ class Receiver:
     power: AggregateMetric = field(default_factory=AggregateMetric)  # W
     area: AggregateMetric = field(default_factory=AggregateMetric)  # mm²
 
-    # Individual component measurements for each agregate
+    # Individual component measurements for each aggregate
     components: dict[str, dict[str, Metric | None]] = field(default_factory=dict)
 
     # Electrical RX parameters

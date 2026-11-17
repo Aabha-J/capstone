@@ -11,7 +11,6 @@ from software_model.simulation_setup.classes import (
 )
 from software_model.data.enums import InterconnectType, Topology
 from software_model.data.experiment_classes import ExperimentConfig
-from software_model.data.formulas import calculate_total_latency
 from software_model.data.interconnect_classes.interconnect import Interconnect
 
 

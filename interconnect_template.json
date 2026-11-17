@@ -1,0 +1,223 @@
+{
+    "interconnects": [
+        {
+            "interconnect_id": "optical_dummy",
+            "interconnect_type": "optical",
+            "modulation_format": null,
+            "bits_per_symbol": null,
+            "symbol_rate": null,
+            "data_rate_per_lane": null,
+            "bandwidth": null,
+            "lane_width": null,
+            "channel_count": null,
+            "wavelength_count": null,
+            "energy_per_bit": {
+                "reported": null
+            },
+            "power": {
+                "reported": null
+            },
+            "area": {
+                "reported": null
+            },
+            "phy_latency": {
+                "reported": null
+            },
+            "total_latency": {
+                "reported": null
+            },
+            "transmitter": {
+                "interconnect_type": "optical",
+                "energy_per_bit": {
+                    "reported": null
+                },
+                "latency": {
+                    "reported": null
+                },
+                "power": {
+                    "reported": null
+                },
+                "area": {
+                    "reported": null
+                },
+                "components": {
+                    "serializer": {
+                        "energy_per_bit": null,
+                        "latency": null,
+                        "power": null,
+                        "area": null
+                    },
+                    "modulator": {
+                        "energy_per_bit": null,
+                        "latency": null,
+                        "power": null,
+                        "area": null
+                    },
+                    "laser": {
+                        "energy_per_bit": null,
+                        "power": null,
+                        "area": null
+                    },
+                    "eo_conversion": {
+                        "latency": null
+                    }
+                },
+                "output_impedance": null,
+                "voltage_swing": null,
+                "equalization": null,
+                "modulator_insertion_loss": null,
+                "extinction_ratio": null,
+                "laser_efficiency": null
+            },
+            "channel": {
+                "link_length": null,
+                "reach": null,
+                "propagation_delay": null,
+                "area": null,
+                "propagation_loss": null,
+                "coupling_loss": null,
+                "insertion_loss": null,
+                "characteristic_impedance": null,
+                "crosstalk": null
+            },
+            "receiver": {
+                "interconnect_type": "optical",
+                "energy_per_bit": {
+                    "reported": null
+                },
+                "latency": {
+                    "reported": null
+                },
+                "power": {
+                    "reported": null
+                },
+                "area": {
+                    "reported": null
+                },
+                "components": {
+                    "photodetector": {
+                        "energy_per_bit": null,
+                        "latency": null,
+                        "power": null,
+                        "area": null
+                    },
+                    "deserializer": {
+                        "energy_per_bit": null,
+                        "latency": null,
+                        "power": null,
+                        "area": null
+                    },
+                    "oe_conversion": {
+                        "latency": null
+                    }
+                },
+                "input_impedance": null,
+                "equalization": null,
+                "responsivity": null,
+                "sensitivity": null,
+                "input_capacitance": null,
+                "target_ber": null
+            },
+            "source": null,
+            "notes": null
+        },
+        {
+            "interconnect_id": "electrical_dummy",
+            "interconnect_type": "electrical",
+            "modulation_format": null,
+            "bits_per_symbol": null,
+            "symbol_rate": null,
+            "data_rate_per_lane": null,
+            "bandwidth": null,
+            "lane_width": null,
+            "channel_count": null,
+            "wavelength_count": null,
+            "energy_per_bit": {
+                "reported": null
+            },
+            "power": {
+                "reported": null
+            },
+            "area": {
+                "reported": null
+            },
+            "phy_latency": {
+                "reported": null
+            },
+            "total_latency": {
+                "reported": null
+            },
+            "transmitter": {
+                "interconnect_type": "electrical",
+                "energy_per_bit": {
+                    "reported": null
+                },
+                "latency": {
+                    "reported": null
+                },
+                "power": {
+                    "reported": null
+                },
+                "area": {
+                    "reported": null
+                },
+                "components": {
+                    "serializer": {
+                        "energy_per_bit": null,
+                        "latency": null,
+                        "power": null,
+                        "area": null
+                    }
+                },
+                "output_impedance": null,
+                "voltage_swing": null,
+                "equalization": null,
+                "modulator_insertion_loss": null,
+                "extinction_ratio": null,
+                "laser_efficiency": null
+            },
+            "channel": {
+                "link_length": null,
+                "reach": null,
+                "propagation_delay": null,
+                "area": null,
+                "propagation_loss": null,
+                "coupling_loss": null,
+                "insertion_loss": null,
+                "characteristic_impedance": null,
+                "crosstalk": null
+            },
+            "receiver": {
+                "interconnect_type": "electrical",
+                "energy_per_bit": {
+                    "reported": null
+                },
+                "latency": {
+                    "reported": null
+                },
+                "power": {
+                    "reported": null
+                },
+                "area": {
+                    "reported": null
+                },
+                "components": {
+                    "deserializer": {
+                        "energy_per_bit": null,
+                        "latency": null,
+                        "power": null,
+                        "area": null
+                    }
+                },
+                "input_impedance": null,
+                "equalization": null,
+                "responsivity": null,
+                "sensitivity": null,
+                "input_capacitance": null,
+                "target_ber": null
+            },
+            "source": null,
+            "notes": null
+        }
+    ]
+}
