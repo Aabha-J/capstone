@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
-from ..data.data_classes import InterconnectType
+from software_model.data.enums import InterconnectType
 class LatencyType(Enum):
     PHY = "phy_latency"
     PROPAGATION = "propagation_delay"

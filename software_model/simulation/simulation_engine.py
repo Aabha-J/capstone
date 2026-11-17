@@ -39,7 +39,7 @@ from math import isfinite
 
 # Import the classes already defined in other project files
 # Done instead of creating separate graph, traffic, or routing structures.
-from ..simulation_setup.classes import (
+from software_model.simulation_setup.classes import (
     Graph,
     RoutingTable,
     TrafficTrace,

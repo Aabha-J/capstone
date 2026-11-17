@@ -1,5 +1,5 @@
 
-from .data_classes import InterconnectType
+from software_model.data.enums import InterconnectType
 
 
 def calculate_bandwidth(interconnect) -> float | None:

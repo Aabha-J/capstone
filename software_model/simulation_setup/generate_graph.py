@@ -1,23 +1,18 @@
 from itertools import combinations
 from math import ceil, sqrt
 
-from .classes import (
-    Graph,
-    Vertex,
+from software_model.simulation_setup.classes import (
     Edge,
-    Link,
+    Graph,
     LatencyComponent,
     LatencyType,
+    Link,
+    Vertex,
 )
-
-from ..data.data_classes import (
-    Interconnect,
-    InterconnectType,
-    ExperimentConfig,
-    Topology,
-)
-
-from ..data.formulas import calculate_total_latency
+from software_model.data.enums import InterconnectType, Topology
+from software_model.data.experiment_classes import ExperimentConfig
+from software_model.data.formulas import calculate_total_latency
+from software_model.data.interconnect_classes.interconnect import Interconnect
 
 
 def create_link(interconnect: Interconnect) -> Link:

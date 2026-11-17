@@ -3,8 +3,9 @@ import json
 from pathlib import Path
 from dataclasses import fields
 
-from .data_classes import *
-from .formulas import calculate_bandwidth, calculate_total_latency
+from software_model.data.enums import InterconnectType
+from software_model.data.formulas import calculate_bandwidth, calculate_total_latency
+from software_model.data.interconnect_classes.interconnect import Interconnect
 
 
 BANDWIDTH_REL_TOLERANCE = 0.01  # 1%

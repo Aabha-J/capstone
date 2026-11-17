@@ -5,12 +5,8 @@ from decimal import Decimal, InvalidOperation
 from itertools import product
 from pathlib import Path
 
-from .data_classes import (
-    ExperimentOptions,
-    ExperimentConfig,
-    Topology,
-    TrafficPattern,
-)
+from software_model.data.enums import Topology, TrafficPattern
+from software_model.data.experiment_classes import ExperimentConfig, ExperimentOptions
 
 
 def load_json(file_path):

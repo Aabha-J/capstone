@@ -1,9 +1,9 @@
 #for now just loads and prints experiment config json file and interconnect
 from pathlib import Path
 
-from .data.interconnect_data_loader import load_interconnects
-from .data.experiment_config_loader import load_experiment_configs
-from .simulation_setup.generate_graph import generate_graph
+from software_model.data.experiment_config_loader import load_experiment_configs
+from software_model.data.interconnect_data_loader import load_interconnects
+from software_model.simulation_setup.generate_graph import generate_graph
 
 
 def main():

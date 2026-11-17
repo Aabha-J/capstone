@@ -37,7 +37,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Optional, Sequence
 
-from .simulation_engine import PacketResult
+from software_model.simulation.simulation_engine import PacketResult
 
 # 1. PERFORMANCE METRICS DATA CLASS
 @dataclass(frozen=True)
