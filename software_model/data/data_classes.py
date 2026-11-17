@@ -6,8 +6,6 @@ from software_model.data.interconnect_classes.receiver import Receiver
 from software_model.data.interconnect_classes.transmitter import Transmitter
 from software_model.data.metrics import (
     AggregateMetric,
-    MeasurementOrigin,
-    MeasurementScope,
     MeasurementStatus,
     Metric,
 )
@@ -19,8 +17,6 @@ __all__ = [
     "ExperimentOptions",
     "Interconnect",
     "InterconnectType",
-    "MeasurementOrigin",
-    "MeasurementScope",
     "MeasurementStatus",
     "Metric",
     "Receiver",

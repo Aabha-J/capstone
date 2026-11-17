@@ -1,65 +1,39 @@
-from dataclasses import dataclass, field
+
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-class MeasurementScope(Enum):
-    # Aggregate measurements
-    INTERCONNECT = "interconnect"
-    PHY = "phy"
-    TX_RX = "tx_rx"
-    TX_RX_LASER = "tx_rx_laser"
-
-    # Transmitter measurements
-    TRANSMITTER = "transmitter"
-    SERIALIZER = "serializer"
-    MODULATOR = "modulator"
-    LASER = "laser"
-    EO_CONVERSION = "eo_conversion"
-
-    # Receiver measurements
-    RECEIVER = "receiver"
-    DESERIALIZER = "deserializer"
-    PHOTODETECTOR = "photodetector"
-    OE_CONVERSION = "oe_conversion"
-
-    # Channel measurements
-    CHANNEL = "channel"
-
-
-class MeasurementOrigin(Enum):
-    REPORTED = "reported"
-    CALCULATED = "calculated"
-
 
 class MeasurementStatus(Enum):
+    """Describes the completeness of an aggregate measurement."""
+
     COMPLETE = "complete"
     PARTIAL = "partial"
     UNAVAILABLE = "unavailable"
 
+
 @dataclass
 class Metric:
-    value: Optional[float] = None
-    unit: Optional[str] = None
+    """Stores one individual measurement."""
 
-    scope: Optional[MeasurementScope] = None
-    origin: Optional[MeasurementOrigin] = None
-    status: MeasurementStatus = MeasurementStatus.UNAVAILABLE
+    value: Optional[float] = None  # Numerical value
+    unit: Optional[str] = None  # Unit (e.g., ns, pJ/bit, mm²)
 
-    source: Optional[str] = None
-    notes: Optional[str] = None
+    source: Optional[str] = None  # Source of the reported measurement
+    notes: Optional[str] = None  # Additional context about the measurement
 
 
 @dataclass
 class AggregateMetric:
-    # Only one of these three can be populated.
+    """Stores an aggregate measurement."""
+
+    # Only one of these three aggregate results can be populated.
     reported: Optional[Metric] = None
     calculated_total: Optional[Metric] = None
     partial_total: Optional[Metric] = None
 
-    # Individual component measurements; None means unavailable.
-    parts: dict[str, Optional[Metric]] = field(default_factory=dict)
-
     def __post_init__(self):
+        """Ensure that only one aggregate result is stored at a time."""
         populated = sum(
             metric is not None
             for metric in (
@@ -77,7 +51,7 @@ class AggregateMetric:
 
     @property
     def metric(self) -> Optional[Metric]:
-        """Return the active aggregate measurement."""
+        """Return the active aggregate measurement, if one exists."""
         return (
             self.reported
             or self.calculated_total
@@ -86,88 +60,52 @@ class AggregateMetric:
 
     @property
     def value(self) -> Optional[float]:
+        """Return the aggregate numerical value, or None if unavailable."""
         return self.metric.value if self.metric else None
 
     @property
     def status(self) -> MeasurementStatus:
-        if self.metric is None:
-            return MeasurementStatus.UNAVAILABLE
-        return self.metric.status
-
-    @property
-    def missing(self) -> list[str]:
-        """Return component names whose measurements are unavailable."""
-        return [
-            name for name, metric in self.parts.items()
-            if metric is None
-        ]
-
-    @classmethod
-    def from_parts(
-        cls,
-        parts: dict[str, Optional[Metric]],
-        unit: str,
-        scope: MeasurementScope,
-        formula: str,
-    ) -> "AggregateMetric":
-        """
-        Build an aggregate from its component measurements.
-
-        All parts available -> calculated_total.
-        Some parts available -> partial_total.
-        No parts available -> neither total is populated.
-        """
-
-        known = [
-            metric for metric in parts.values()
-            if metric is not None
-            and metric.value is not None
-            and metric.status != MeasurementStatus.UNAVAILABLE
-        ]
-
-        missing = [
-            name for name, metric in parts.items()
-            if metric is None
-            or metric.value is None
-            or metric.status == MeasurementStatus.UNAVAILABLE
-        ]
-
-        if not known:
-            return cls(parts=parts)
-
-        value = sum(metric.value for metric in known)
-
-        # A total cannot be complete if any input is partial.
-        complete = (
-            not missing
-            and all(
-                metric.status == MeasurementStatus.COMPLETE
-                for metric in known
-            )
-        )
-
-        result = Metric(
-            value=value,
-            unit=unit,
-            scope=scope,
-            origin=MeasurementOrigin.CALCULATED,
-            status=(
-                MeasurementStatus.COMPLETE
-                if complete
-                else MeasurementStatus.PARTIAL
-            ),
-            notes=formula,
-        )
-
-        if complete:
-            return cls(
-                calculated_total=result,
-                parts=parts,
-            )
-
-        return cls(
-            partial_total=result,
-            parts=parts,
-        )
+        """Return the completeness status of the aggregate measurement."""
+        if self.reported is not None or self.calculated_total is not None:
+            return MeasurementStatus.COMPLETE
+        if self.partial_total is not None:
+            return MeasurementStatus.PARTIAL
+        return MeasurementStatus.UNAVAILABLE
 
 
+def calculate_aggregate_sum(
+    aggregate: AggregateMetric,
+    parts: tuple[Optional[Metric], ...],
+    formula: str,
+) -> AggregateMetric:
+    """Calculate an aggregate from its available component measurements."""
+
+    if aggregate.reported is not None:
+        return aggregate
+
+    available = [
+        part for part in parts
+        if part is not None and part.value is not None
+    ]
+
+    if not available:
+        return aggregate
+
+    unit = available[0].unit
+
+    if any(part.unit != unit for part in available):
+        raise ValueError("Component measurement units do not match.")
+
+    total = Metric(
+        value=sum(part.value for part in available),
+        unit=unit,
+        source="calculated",
+        notes=formula,
+    )
+
+    if len(available) == len(parts):
+        aggregate.calculated_total = total
+    else:
+        aggregate.partial_total = total
+
+    return aggregate
