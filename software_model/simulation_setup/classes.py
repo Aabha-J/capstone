@@ -3,19 +3,7 @@ from enum import Enum
 from typing import Optional
 
 from software_model.data.enums import InterconnectType
-class LatencyType(Enum):
-    PHY = "phy_latency"
-    PROPAGATION = "propagation_delay"
-    EO_CONVERSION = "eo_conversion_latency"
-    OE_CONVERSION = "oe_conversion_latency"
-
-@dataclass
-class LatencyComponent:
-    """Represents an individual latency component."""
-
-    latency_type: LatencyType
-    value: float  # ns
-
+from software_model.data.interconnect_classes.interconnect import Interconnect
 
 @dataclass
 class Vertex:
@@ -23,35 +11,13 @@ class Vertex:
     chiplet_id: int
 
 @dataclass
-class Link:
-    """Represents the interconnect properties of a link."""
-    interconnect_type: InterconnectType
-    bandwidth: Optional[float] = None       # GB/s
-    energy_per_bit: Optional[float] = None  # pJ/bit
-    area: Optional[float] = None            # mm^2
-
-    total_latency: Optional[float] = None
-    latency_components: list[LatencyComponent] = field(default_factory=list)
-
-    @property
-    def known_latency(self) -> Optional[float]:
-        """Sum of only recorded latency components."""
-
-        if not self.latency_components:
-            return None
-
-        return sum(component.value for component in self.latency_components)
-
- 
-
-@dataclass
 class Edge:
-    """Represents a connection between two chiplets."""
+    """Represents an interconnect connection between two chiplets."""
 
     source: Vertex
     destination: Vertex
-    distance: float           # mm
-    link: Link
+    distance: float  # mm
+    interconnect: Interconnect
 
 
 class Graph:
