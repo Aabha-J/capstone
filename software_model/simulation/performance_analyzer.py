@@ -37,7 +37,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Optional, Sequence
 
-from .simulation_engine import PacketResult
+from software_model.simulation.simulation_engine import PacketResult
 
 # 1. PERFORMANCE METRICS DATA CLASS
 @dataclass(frozen=True)
@@ -208,3 +208,40 @@ def analyze(
         throughput_gbps=throughput,
         total_energy_pj=total_energy,
     )
+
+
+# Reference comparison is separate from packet metric calculation.
+@dataclass(frozen=True)
+class ValidationResult:
+    metric: str
+    simulated: Optional[float]
+    reference: float
+    error_percent: Optional[float]
+    passed: Optional[bool]
+
+
+def validate_metrics(metrics: PerformanceMetrics, references: dict, tolerance_percent: float = 10.0) -> list[ValidationResult]:
+    """Compare equivalent simulated metrics with published reference metrics.
+
+    references maps PerformanceMetrics field names to numerical reference values.
+    Caller must ensure matching units, packet sizes, traffic, and measurement windows.
+    A missing simulated metric is reported as not validated (passed=None).
+    """
+    if not isfinite(tolerance_percent) or tolerance_percent < 0:
+        raise ValueError("tolerance_percent must be finite and nonnegative")
+    comparable = {"average_latency_ns", "max_latency_ns", "average_queue_delay_ns",
+                  "max_queue_delay_ns", "throughput_gbps", "total_energy_pj"}
+    output = []
+    for name, reference in references.items():
+        if name not in comparable:
+            raise ValueError(f"Unsupported reference metric: {name}")
+        if isinstance(reference, bool) or not isinstance(reference, (int, float)) or not isfinite(reference):
+            raise ValueError(f"Invalid reference value for {name}")
+        simulated = getattr(metrics, name)
+        if simulated is None:
+            output.append(ValidationResult(name, None, float(reference), None, None))
+            continue
+        error = (abs(simulated - reference) / abs(reference) * 100
+                 if reference != 0 else (0.0 if simulated == 0 else float("inf")))
+        output.append(ValidationResult(name, simulated, float(reference), error, error <= tolerance_percent))
+    return output

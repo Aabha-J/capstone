@@ -39,7 +39,7 @@ from math import isfinite
 
 # Import the classes already defined in other project files
 # Done instead of creating separate graph, traffic, or routing structures.
-from ..simulation_setup.classes import (
+from software_model.simulation_setup.classes import (
     Graph,
     RoutingTable,
     TrafficTrace,
@@ -157,7 +157,19 @@ def simulate(
 
     # Get the link's physical properties.
     # These may describe an electrical or optical link.
-    link = edge.link
+    interconnect = edge.interconnect
+
+    # Resolve typed physical measurements from the new interconnect model.
+    bandwidth = interconnect.bandwidth.value if interconnect.bandwidth is not None else None
+    latency = interconnect.total_latency.value
+    energy_per_bit = interconnect.energy_per_bit.value
+
+    # Avoid silently treating partial latency as a complete physical model.
+    from software_model.data.metrics import MeasurementStatus
+    if interconnect.total_latency.status == MeasurementStatus.PARTIAL:
+        raise ValueError("Interconnect total_latency is partial; provide complete latency data")
+    if interconnect.energy_per_bit.status == MeasurementStatus.PARTIAL:
+        energy_per_bit = None
 
     # STEP 3: VALIDATE THE LINK PARAMETERS
 
@@ -165,9 +177,9 @@ def simulate(
     # Units: GB/s
 
     if (
-        link.bandwidth is None
-        or not isfinite(link.bandwidth)
-        or link.bandwidth <= 0
+        bandwidth is None
+        or not isfinite(bandwidth)
+        or bandwidth <= 0
     ):
         raise ValueError(
             "Link bandwidth must be finite and positive (GB/s)"
@@ -177,9 +189,9 @@ def simulate(
     # Units: nanoseconds
 
     if (
-        link.total_latency is None
-        or not isfinite(link.total_latency)
-        or link.total_latency < 0
+        latency is None
+        or not isfinite(latency)
+        or latency < 0
     ):
         raise ValueError(
             "Link total_latency must be finite and "
@@ -190,10 +202,10 @@ def simulate(
     # If provided, it must be nonnegative and finite.
     # Units: pJ/bit
 
-    if link.energy_per_bit is not None:
+    if energy_per_bit is not None:
         if (
-            not isfinite(link.energy_per_bit)
-            or link.energy_per_bit < 0
+            not isfinite(energy_per_bit)
+            or energy_per_bit < 0
         ):
             raise ValueError(
                 "energy_per_bit must be finite and nonnegative"
@@ -325,7 +337,7 @@ def simulate(
         # assuming decimal gigabytes (10^9 bytes).
 
         serialization = (
-            packet.packet_size / link.bandwidth
+            packet.packet_size / bandwidth
         )
 
         # STEP 5G: CALCULATE TRANSMISSION FINISH TIME
@@ -342,9 +354,9 @@ def simulate(
         # conversion delays, depending on the link data.
         #
         # Serialization must not already be included
-        # in link.total_latency.
+        # in latency.
 
-        arrived = finished + link.total_latency
+        arrived = finished + latency
 
         # STEP 5I: UPDATE LINK AVAILABILITY
         # The next packet in the same direction can
@@ -366,7 +378,7 @@ def simulate(
         # - Serialization
         # - Physical link latency
 
-        latency = arrived - generated
+        packet_latency = arrived - generated
 
         # STEP 5L: CALCULATE COMMUNICATION ENERGY
         # Convert packet size from bytes to bits.
@@ -375,8 +387,8 @@ def simulate(
         # If energy per bit is known, calculate energy.
         # Otherwise, store None to indicate missing data.
 
-        if link.energy_per_bit is not None:
-            energy = packet_bits * link.energy_per_bit
+        if energy_per_bit is not None:
+            energy = packet_bits * energy_per_bit
         else:
             energy = None
 
@@ -391,7 +403,7 @@ def simulate(
             arrival_ns=arrived,
             queue_delay_ns=queue_delay,
             serialization_ns=serialization,
-            latency_ns=latency,
+            latency_ns=packet_latency,
             energy_pj=energy,
         )
 

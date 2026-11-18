@@ -2,31 +2,19 @@ import math
 
 import pytest
 from software_model.simulation_setup.generate_graph import generate_graph
-from software_model.data.data_classes import (
-    Interconnect,
-    InterconnectType,
-    ExperimentConfig,
-    Topology,
-    TrafficPattern,
-)
+from software_model.data.enums import InterconnectType, Topology, TrafficPattern
+from software_model.data.experiment_classes import ExperimentConfig
+from software_model.data.interconnect_classes.interconnect import Interconnect
+from software_model.data.interconnect_classes.channel import Channel
+from software_model.data.metrics import InterconnectOverall, Metric, MeasurementStatus
 
 
 # --------------------------------------------------
 # Test helpers
 # --------------------------------------------------
 
-def make_interconnect(
-    interconnect_type=InterconnectType.ELECTRICAL,
-    **overrides,
-):
-    """Create an interconnect with test properties."""
-
-    interconnect = Interconnect(
-        interconnect_id="TEST_001",
-        interconnect_type=interconnect_type,
-    )
-
-    # Default properties.
+def make_interconnect(interconnect_type=InterconnectType.ELECTRICAL, **overrides):
+    """Create a representative interconnect using the current metric model."""
     properties = {
         "bandwidth": 64.0,
         "energy_per_bit": 2.5,
@@ -37,12 +25,34 @@ def make_interconnect(
         "eo_conversion_latency": None,
         "oe_conversion_latency": None,
     }
-
     properties.update(overrides)
 
-    for attribute, value in properties.items():
-        setattr(interconnect, attribute, value)
+    def overall(value, unit):
+        return InterconnectOverall(
+            reported=Metric(value=value, unit=unit) if value is not None else None
+        )
 
+    interconnect = Interconnect(
+        interconnect_id="TEST_001",
+        interconnect_type=interconnect_type,
+        bandwidth=(Metric(properties["bandwidth"], "GB/s")
+                   if properties["bandwidth"] is not None else None),
+        energy_per_bit=overall(properties["energy_per_bit"], "pJ/bit"),
+        area=overall(properties["area"], "mm²"),
+        phy_latency=overall(properties["phy_latency"], "ns"),
+        total_latency=overall(properties["total_latency"], "ns"),
+        channel=Channel(
+            propagation_delay=(Metric(properties["propagation_delay"], "ns")
+                               if properties["propagation_delay"] is not None else None)
+        ),
+    )
+    # E/O and O/E conversion delays are not separate fields on the current
+    # Interconnect dataclass. Keep their test values in the component breakdown
+    # rather than silently treating them as part of the reported total.
+    for name in ("eo_conversion_latency", "oe_conversion_latency"):
+        value = properties[name]
+        if value is not None:
+            interconnect.total_latency.components[name] = Metric(value, "ns")
     return interconnect
 
 
@@ -195,96 +205,71 @@ def test_edge_distance_is_copied_from_config():
 
 
 def test_link_properties_are_copied():
-    """Check that interconnect properties are transferred to graph links."""
-
+    """Each generated edge retains the interconnect and its reported metrics."""
     interconnect = make_interconnect(
-        bandwidth=128.0,
-        energy_per_bit=1.5,
-        area=2.0,
-        total_latency=8.0,
+        bandwidth=128.0, energy_per_bit=1.5, area=2.0, total_latency=8.0
     )
-
-    graph = generate_graph(
-        interconnect,
-        make_config(Topology.RING, 3),
-    )
-
+    graph = generate_graph(interconnect, make_config(Topology.RING, 3))
     for edge in graph.edges:
-        assert edge.link.bandwidth == 128.0
-        assert edge.link.energy_per_bit == 1.5
-        assert edge.link.area == 2.0
-
-        # Existing total latency takes priority.
-        assert edge.link.total_latency == 8.0
-
+        assert edge.interconnect is interconnect
+        assert edge.interconnect.bandwidth.value == pytest.approx(128.0)
+        assert edge.interconnect.energy_per_bit.value == pytest.approx(1.5)
+        assert edge.interconnect.area.value == pytest.approx(2.0)
+        assert edge.interconnect.total_latency.value == pytest.approx(8.0)
 
 
 def test_partial_latency_components_are_preserved():
-    """Keep known latency values even if total latency cannot be calculated."""
-
+    """Missing propagation delay must not be invented as a complete total."""
     interconnect = make_interconnect(
-        total_latency=None,
-        phy_latency=1.0,
-        propagation_delay=None,
+        total_latency=None, phy_latency=1.0, propagation_delay=None
     )
-
-    graph = generate_graph(
-        interconnect,
-        make_config(Topology.RING, 3),
-    )
-
+    graph = generate_graph(interconnect, make_config(Topology.RING, 3))
     for edge in graph.edges:
-        assert edge.link.total_latency is None
-        assert len(edge.link.latency_components) == 1
-        assert edge.link.known_latency == 1.0
+        link = edge.interconnect
+        assert link is interconnect
+        assert link.total_latency.value is None
+        assert link.phy_latency.value == pytest.approx(1.0)
+        assert link.channel.propagation_delay is None
 
 
 def test_missing_link_properties_are_preserved():
-    """Missing interconnect properties should remain None, even if total latency given"""
-
+    """Unavailable metrics remain unavailable; reported latency is preserved."""
     interconnect = make_interconnect(
-        bandwidth=None,
-        energy_per_bit=None,
-        area=None,
-        total_latency=5.0,
-        phy_latency=None,
-        propagation_delay=None,
+        bandwidth=None, energy_per_bit=None, area=None,
+        total_latency=5.0, phy_latency=None, propagation_delay=None
     )
-
-    graph = generate_graph(
-        interconnect,
-        make_config(Topology.RING, 3),
-    )
-
+    graph = generate_graph(interconnect, make_config(Topology.RING, 3))
     for edge in graph.edges:
-        assert edge.link.bandwidth is None
-        assert edge.link.energy_per_bit is None
-        assert edge.link.area is None
-        assert edge.link.total_latency == 5.0
-        assert edge.link.latency_components == []
-        assert edge.link.known_latency is None
+        link = edge.interconnect
+        assert link.bandwidth is None
+        assert link.energy_per_bit.value is None
+        assert link.energy_per_bit.status == MeasurementStatus.UNAVAILABLE
+        assert link.area.value is None
+        assert link.total_latency.value == pytest.approx(5.0)
+        assert link.phy_latency.value is None
+        assert link.channel.propagation_delay is None
 
 
 def test_optical_total_latency_includes_conversion():
-    """Optical total latency should include both conversion components."""
+    """Preserve reported optical latency and available conversion inputs.
 
+    The current Interconnect model has no dedicated E/O or O/E latency fields,
+    so this test does not claim that calculate_total_latency adds them.
+    """
     interconnect = make_interconnect(
         interconnect_type=InterconnectType.OPTICAL,
-        total_latency=10.0,
-        phy_latency=1.0,
-        propagation_delay=2.0,
-        eo_conversion_latency=3.0,
-        oe_conversion_latency=4.0,
+        total_latency=10.0, phy_latency=1.0, propagation_delay=2.0,
+        eo_conversion_latency=3.0, oe_conversion_latency=4.0,
     )
-
-    graph = generate_graph(
-        interconnect,
-        make_config(Topology.RING, 3),
-    )
-
+    graph = generate_graph(interconnect, make_config(Topology.RING, 3))
     for edge in graph.edges:
-        assert edge.link.total_latency == 10.0
-        assert len(edge.link.latency_components) == 4
+        link = edge.interconnect
+        assert link is interconnect
+        assert link.total_latency.value == pytest.approx(10.0)
+        assert link.phy_latency.value == pytest.approx(1.0)
+        assert link.channel.propagation_delay.value == pytest.approx(2.0)
+        assert link.total_latency.components["eo_conversion_latency"].value == 3.0
+        assert link.total_latency.components["oe_conversion_latency"].value == 4.0
 
 
 # --------------------------------------------------

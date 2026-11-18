@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
+from software_model.data.interconnect_classes.interconnect import Interconnect
+
 
 from ..data.data_classes import InterconnectType
 class LatencyType(Enum):
@@ -46,12 +48,10 @@ class Link:
 
 @dataclass
 class Edge:
-    """Represents a connection between two chiplets."""
-
     source: Vertex
     destination: Vertex
-    distance: float           # mm
-    link: Link
+    distance: float
+    interconnect: Interconnect
 
 
 class Graph:

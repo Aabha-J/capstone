@@ -22,132 +22,40 @@ All tests use dummy inputs so we do not depend on
 the unfinished Traffic Generator or Router modules.
 """
 
-from dataclasses import dataclass
-from types import SimpleNamespace
-
 import pytest
-
 from software_model.simulation.simulation_engine import simulate
-
-
-# ============================================================
-# 1. CREATE DUMMY INPUT CLASSES
-# ============================================================
-
-@dataclass
-class DummyVertex:
-    chiplet_id: int
-
-
-@dataclass
-class DummyLink:
-    bandwidth: float = 1.0       # GB/s
-    total_latency: float = 5.0    # ns
-    energy_per_bit: float | None = 2.0  # pJ/bit
-
-
-@dataclass
-class DummyEdge:
-    source: DummyVertex
-    destination: DummyVertex
-    link: DummyLink
-
-
-@dataclass
-class DummyPacket:
-    generation_time: float  # cycles
-    source: int
-    destination: int
-    packet_size: int        # bytes
-
-
-class DummyRoutingTable:
-    """
-    Temporary routing table for two chiplets.
-
-    Returns a direct route between Chiplet 0 and Chiplet 1.
-    """
-
-    def get_route(self, source, destination):
-        if (source, destination) in [(0, 1), (1, 0)]:
-            return [source, destination]
-
-        return None
+from software_model.simulation_setup.classes import (
+    Graph, Vertex, Edge, PacketEvent, TrafficTrace, RoutingEntry, RoutingTable
+)
+from software_model.data.enums import InterconnectType
+from software_model.data.metrics import Metric, InterconnectOverall
+from software_model.data.interconnect_classes.interconnect import Interconnect
 
 
 class MissingRoutingTable:
-    """Used to test what happens when a route is missing."""
-
     def get_route(self, source, destination):
         return None
 
 
-# ============================================================
-# 2. HELPER FUNCTION TO CREATE TEST SCENARIOS
-# ============================================================
-
-def make_scenario(
-    packets,
-    bandwidth=1.0,
-    latency=5.0,
-    energy_per_bit=2.0,
-):
-    """
-    Create a two-chiplet simulation environment.
-
-    packets is a list of tuples:
-        (generation_time, source, destination, packet_size)
-
-    Example:
-        (0, 0, 1, 100)
-
-    Means:
-        Generated at cycle 0
-        Sent from Chiplet 0 to Chiplet 1
-        Packet size = 100 bytes
-    """
-
-    # Create two chiplets.
-    chiplet_0 = DummyVertex(chiplet_id=0)
-    chiplet_1 = DummyVertex(chiplet_id=1)
-
-    # Create the interconnect.
-    link = DummyLink(
-        bandwidth=bandwidth,
-        total_latency=latency,
-        energy_per_bit=energy_per_bit,
+def make_scenario(packets, bandwidth=1.0, latency=5.0, energy_per_bit=2.0):
+    v0, v1 = Vertex(0), Vertex(1)
+    link = Interconnect(
+        interconnect_id="TEST", interconnect_type=InterconnectType.ELECTRICAL,
+        bandwidth=Metric(value=bandwidth, unit="GB/s"),
+        total_latency=InterconnectOverall(reported=Metric(value=latency, unit="ns")),
+        energy_per_bit=(InterconnectOverall(reported=Metric(value=energy_per_bit, unit="pJ/bit"))
+                        if energy_per_bit is not None else InterconnectOverall()),
     )
-
-    # Connect the two chiplets.
-    edge = DummyEdge(
-        source=chiplet_0,
-        destination=chiplet_1,
-        link=link,
-    )
-
-    # Create a graph-like object.
-    graph = SimpleNamespace(
-        vertices=[chiplet_0, chiplet_1],
-        edges=[edge],
-    )
-
-    # Convert packet tuples into DummyPacket objects.
-    events = [
-        DummyPacket(
-            generation_time=time,
-            source=source,
-            destination=destination,
-            packet_size=size,
-        )
-        for time, source, destination, size in packets
-    ]
-
-    # Create the traffic trace.
-    traffic = SimpleNamespace(events=events)
-
-    # Create the routing table.
-    routing = DummyRoutingTable()
-
+    graph = Graph()
+    graph.add_vertex(v0)
+    graph.add_vertex(v1)
+    graph.add_edge(Edge(source=v0, destination=v1, distance=10.0, interconnect=link))
+    traffic = TrafficTrace()
+    for time, source, destination, size in packets:
+        traffic.add_event(PacketEvent(time, source, destination, size))
+    routing = RoutingTable()
+    routing.add_entry(RoutingEntry(0, 1, [0, 1]))
+    routing.add_entry(RoutingEntry(1, 0, [1, 0]))
     return graph, traffic, routing
 
 
@@ -459,7 +367,7 @@ def test_invalid_chiplet_count():
         (0, 0, 1, 100)
     ])
 
-    graph.vertices.append(DummyVertex(chiplet_id=2))
+    graph.vertices.append(Vertex(chiplet_id=2))
 
     with pytest.raises(ValueError, match="chiplets"):
         simulate(graph, traffic, routing)
