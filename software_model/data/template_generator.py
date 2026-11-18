@@ -11,15 +11,27 @@ from software_model.data.enums import InterconnectType
 from software_model.data.interconnect_classes.interconnect import Interconnect
 from software_model.data.interconnect_classes.receiver import Receiver
 from software_model.data.interconnect_classes.transmitter import Transmitter
+from software_model.data.interconnect_classes.channel import Channel
 from software_model.data.interconnect_components import (
     RECEIVER_PARTS,
     TRANSMITTER_PARTS,
 )
-from software_model.data.metrics import Metric, AggregateMetric
+from software_model.data.metrics import (
+    Metric,
+    AggregateMetric,
+    InterconnectOverall,
+)
 
 
-def _unwrap_optional(annotation):
-    """Return the underlying type of an Optional annotation."""
+COMPONENT_PARTS = {
+    Transmitter: TRANSMITTER_PARTS,
+    Receiver: RECEIVER_PARTS,
+}
+
+
+def unwrap_optional(annotation):
+    """Return the non-None type from an Optional or Union annotation."""
+
     origin = get_origin(annotation)
 
     if origin in (Union, UnionType):
@@ -27,8 +39,11 @@ def _unwrap_optional(annotation):
             arg for arg in get_args(annotation)
             if arg is not type(None)
         ]
+
         if len(args) == 1:
             return args[0]
+
+        return args
 
     return annotation
 
@@ -36,21 +51,23 @@ def _unwrap_optional(annotation):
 def generate_interconnect_template(
     cls,
     interconnect_type,
-    component_parts,
+    component_parts=COMPONENT_PARTS,
 ):
-    """
-    Generate a JSON-compatible template from a dataclass.
+    """Generate a JSON-compatible template from a dataclass."""
 
-    Individual Metric fields are initialized to None.
-    AggregateMetric fields contain only a reported field.
-    Component fields are generated from the component dictionaries.
-    """
-
-    if cls is Metric:
+    if cls in (Metric,):
         return None
 
     if cls is AggregateMetric:
-        return {"reported": None}
+        return {
+            "reported": None,
+            "components": {},
+        }
+
+    if cls is InterconnectOverall:
+        return {
+            "reported": None,
+        }
 
     if not is_dataclass(cls):
         return None
@@ -60,32 +77,64 @@ def generate_interconnect_template(
 
     for field in fields(cls):
         name = field.name
-        annotation = _unwrap_optional(type_hints[name])
+        annotation = unwrap_optional(type_hints[name])
 
         # Set the interconnect type.
         if name == "interconnect_type":
             template[name] = interconnect_type.value
             continue
 
-        # Generate component fields from the component dictionary.
-        if name == "components" and cls in component_parts:
-            parts = component_parts[cls][interconnect_type]
+        # Generate TX/RX aggregate components.
+        if annotation is AggregateMetric:
+            if cls in component_parts:
+                parts = component_parts[cls][interconnect_type]
 
-            components = dict.fromkeys(
-                component
-                for component_list in parts.values()
-                for component in component_list
-            )
-
-            template[name] = {
-                component: {
-                    aggregate: None
-                    for aggregate, component_list in parts.items()
-                    if component in component_list
+                template[name] = {
+                    "reported": None,
+                    "components": {
+                        component: None
+                        for component in parts.get(name, [])
+                    },
                 }
-                for component in components
+            else:
+                template[name] = {
+                    "reported": None,
+                    "components": {},
+                }
+
+            continue
+
+        # Generate interconnect-level aggregates.
+        if annotation is InterconnectOverall:
+            template[name] = {
+                "reported": None,
             }
             continue
+
+        # Generate individual metrics.
+        if annotation is Metric:
+            template[name] = None
+            continue
+
+        # Handle fields that allow Metric or AggregateMetric.
+        if isinstance(annotation, list):
+            if Metric in annotation and AggregateMetric in annotation:
+                template[name] = {
+                    "reported": None,
+                    "components": {},
+                }
+                continue
+
+            if Metric in annotation:
+                template[name] = None
+                continue
+
+            if AggregateMetric in annotation:
+                template[name] = {
+                    "reported": None,
+                    "components": {},
+                }
+                continue
 
         # Recursively generate nested dataclasses.
         if is_dataclass(annotation):
@@ -96,22 +145,18 @@ def generate_interconnect_template(
             )
             continue
 
-        # All other fields start unreported.
+        # Other fields start unreported.
         template[name] = None
 
     return template
 
 
 def generate_dummy_json(
-    interconnect_cls,
-    component_parts,
+    interconnect_cls=Interconnect,
+    component_parts=COMPONENT_PARTS,
     output_path=None,
 ):
-    """
-    Generate optical and electrical dummy interconnect JSON.
-
-    Optionally writes the generated JSON to a file.
-    """
+    """Generate electrical and optical interconnect templates."""
 
     interconnects = []
 
@@ -128,10 +173,13 @@ def generate_dummy_json(
 
         interconnects.append(interconnect)
 
-    output = {"interconnects": interconnects}
+    output = {
+        "interconnects": interconnects,
+    }
 
     if output_path is not None:
         output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
         with output_path.open("w", encoding="utf-8") as file:
             json.dump(output, file, indent=4)
@@ -139,27 +187,23 @@ def generate_dummy_json(
     return output
 
 
-component_parts = {
-    Transmitter: TRANSMITTER_PARTS,
-    Receiver: RECEIVER_PARTS,
-}
-
-
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate an electrical and optical interconnect JSON template."
+        description="Generate electrical and optical interconnect JSON templates."
     )
+
     parser.add_argument(
         "output_path",
         nargs="?",
         type=Path,
-        help="write the template to this file instead of printing it",
+        help="Optional output JSON file path.",
     )
+
     args = parser.parse_args()
 
     output = generate_dummy_json(
         Interconnect,
-        component_parts,
+        COMPONENT_PARTS,
         args.output_path,
     )
 

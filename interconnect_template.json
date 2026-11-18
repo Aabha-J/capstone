@@ -29,37 +29,35 @@
             "transmitter": {
                 "interconnect_type": "optical",
                 "energy_per_bit": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "serializer": null,
+                        "modulator": null,
+                        "laser": null
+                    }
                 },
                 "latency": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "serializer": null,
+                        "modulator": null,
+                        "eo_conversion": null
+                    }
                 },
                 "power": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "serializer": null,
+                        "modulator": null,
+                        "laser": null
+                    }
                 },
                 "area": {
-                    "reported": null
-                },
-                "components": {
-                    "serializer": {
-                        "energy_per_bit": null,
-                        "latency": null,
-                        "power": null,
-                        "area": null
-                    },
-                    "modulator": {
-                        "energy_per_bit": null,
-                        "latency": null,
-                        "power": null,
-                        "area": null
-                    },
-                    "laser": {
-                        "energy_per_bit": null,
-                        "power": null,
-                        "area": null
-                    },
-                    "eo_conversion": {
-                        "latency": null
+                    "reported": null,
+                    "components": {
+                        "serializer": null,
+                        "modulator": null,
+                        "laser": null
                     }
                 },
                 "output_impedance": null,
@@ -83,32 +81,32 @@
             "receiver": {
                 "interconnect_type": "optical",
                 "energy_per_bit": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "photodetector": null,
+                        "deserializer": null
+                    }
                 },
                 "latency": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "photodetector": null,
+                        "oe_conversion": null,
+                        "deserializer": null
+                    }
                 },
                 "power": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "photodetector": null,
+                        "deserializer": null
+                    }
                 },
                 "area": {
-                    "reported": null
-                },
-                "components": {
-                    "photodetector": {
-                        "energy_per_bit": null,
-                        "latency": null,
-                        "power": null,
-                        "area": null
-                    },
-                    "deserializer": {
-                        "energy_per_bit": null,
-                        "latency": null,
-                        "power": null,
-                        "area": null
-                    },
-                    "oe_conversion": {
-                        "latency": null
+                    "reported": null,
+                    "components": {
+                        "photodetector": null,
+                        "deserializer": null
                     }
                 },
                 "input_impedance": null,
@@ -150,23 +148,27 @@
             "transmitter": {
                 "interconnect_type": "electrical",
                 "energy_per_bit": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "serializer": null
+                    }
                 },
                 "latency": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "serializer": null
+                    }
                 },
                 "power": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "serializer": null
+                    }
                 },
                 "area": {
-                    "reported": null
-                },
-                "components": {
-                    "serializer": {
-                        "energy_per_bit": null,
-                        "latency": null,
-                        "power": null,
-                        "area": null
+                    "reported": null,
+                    "components": {
+                        "serializer": null
                     }
                 },
                 "output_impedance": null,
@@ -190,23 +192,27 @@
             "receiver": {
                 "interconnect_type": "electrical",
                 "energy_per_bit": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "deserializer": null
+                    }
                 },
                 "latency": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "deserializer": null
+                    }
                 },
                 "power": {
-                    "reported": null
+                    "reported": null,
+                    "components": {
+                        "deserializer": null
+                    }
                 },
                 "area": {
-                    "reported": null
-                },
-                "components": {
-                    "deserializer": {
-                        "energy_per_bit": null,
-                        "latency": null,
-                        "power": null,
-                        "area": null
+                    "reported": null,
+                    "components": {
+                        "deserializer": null
                     }
                 },
                 "input_impedance": null,
