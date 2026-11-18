@@ -6,9 +6,8 @@ from software_model.data.interconnect_classes.channel import Channel
 from software_model.data.interconnect_classes.receiver import Receiver
 from software_model.data.interconnect_classes.transmitter import Transmitter
 from software_model.data.metrics import (
-    AggregateMetric,
+    InterconnectOverall,
     Metric,
-    calculate_aggregate_sum,
 )
 
 
@@ -36,13 +35,13 @@ class Interconnect:
     wavelength_count: Optional[int] = None
 
     # Aggregate energy, power, and area
-    energy_per_bit: AggregateMetric = field(default_factory=AggregateMetric)  # pJ/bit
-    power: AggregateMetric = field(default_factory=AggregateMetric)  # W
-    area: AggregateMetric = field(default_factory=AggregateMetric)  # mm²
+    energy_per_bit: InterconnectOverall = field(default_factory=InterconnectOverall)  # pJ/bit
+    power: InterconnectOverall = field(default_factory=InterconnectOverall)  # W
+    area: InterconnectOverall = field(default_factory=InterconnectOverall)  # mm²
 
     # Aggregate latency
-    phy_latency: AggregateMetric = field(default_factory=AggregateMetric)  # ns
-    total_latency: AggregateMetric = field(default_factory=AggregateMetric)  # ns
+    phy_latency: InterconnectOverall = field(default_factory=InterconnectOverall)  # ns
+    total_latency: InterconnectOverall = field(default_factory=InterconnectOverall)  # ns
 
     # Component parameters
     transmitter: Optional[Transmitter] = None
@@ -54,63 +53,78 @@ class Interconnect:
     notes: Optional[str] = None
 
     def calculate_energy_per_bit(self):
-        calculate_aggregate_sum(
-            aggregate=self.energy_per_bit,
-            parts=(
-                self.transmitter.energy_per_bit.metric if self.transmitter else None,
-                self.receiver.energy_per_bit.metric if self.receiver else None,
-            ),
+        """Calculate total interconnect energy per bit."""
+
+        self.energy_per_bit.calculate_sum(
+            parts={
+                "transmitter": (
+                    self.transmitter.energy_per_bit if self.transmitter else None
+                ),
+                "receiver": (
+                    self.receiver.energy_per_bit if self.receiver else None
+                ),
+            },
             formula="transmitter + receiver",
         )
-
 
     def calculate_power(self):
         """Calculate total interconnect power."""
 
-        calculate_aggregate_sum(
-            aggregate=self.power,
-            parts=(
-                self.transmitter.power.metric if self.transmitter else None,
-                self.receiver.power.metric if self.receiver else None,
-            ),
+        self.power.calculate_sum(
+            parts={
+                "transmitter": (
+                    self.transmitter.power if self.transmitter else None
+                ),
+                "receiver": (
+                    self.receiver.power if self.receiver else None
+                ),
+            },
             formula="transmitter + receiver",
         )
 
-
     def calculate_area(self):
-        calculate_aggregate_sum(
-            aggregate=self.area,
-            parts=(
-                self.transmitter.area.metric if self.transmitter else None,
-                self.channel.area if self.channel else None,
-                self.receiver.area.metric if self.receiver else None,
-            ),
+        """Calculate total interconnect area."""
+
+        self.area.calculate_sum(
+            parts={
+                "transmitter": (
+                    self.transmitter.area if self.transmitter else None
+                ),
+                "channel": (
+                    self.channel.area if self.channel else None
+                ),
+                "receiver": (
+                    self.receiver.area if self.receiver else None
+                ),
+            },
             formula="transmitter + channel + receiver",
         )
-
 
     def calculate_phy_latency(self):
         """Calculate PHY latency from transmitter and receiver."""
 
-        calculate_aggregate_sum(
-            aggregate=self.phy_latency,
-            parts=(
-                self.transmitter.latency.metric if self.transmitter else None,
-                self.receiver.latency.metric if self.receiver else None,
-            ),
+        self.phy_latency.calculate_sum(
+            parts={
+                "transmitter": (
+                    self.transmitter.latency if self.transmitter else None
+                ),
+                "receiver": (
+                    self.receiver.latency if self.receiver else None
+                ),
+            },
             formula="transmitter + receiver",
         )
-
 
     def calculate_total_latency(self):
         """Calculate total interconnect latency."""
 
-        calculate_aggregate_sum(
-            aggregate=self.total_latency,
-            parts=(
-                self.phy_latency.metric,
-                self.channel.propagation_delay if self.channel else None,
-            ),
+        self.total_latency.calculate_sum(
+            parts={
+                "phy_latency": self.phy_latency,
+                "channel_propagation_delay": (
+                    self.channel.propagation_delay if self.channel else None
+                ),
+            },
             formula="PHY latency + channel propagation delay",
         )
 
