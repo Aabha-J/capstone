@@ -1,3 +1,11 @@
+**University of Toronto | Engineering Capstone 2026–2027**
+
+![Python](https://img.shields.io/badge/Software-Python-3776AB)
+![SystemVerilog](https://img.shields.io/badge/RTL-SystemVerilog-purple)
+![FPGA](https://img.shields.io/badge/FPGA-DE1--SoC-teal)
+![Status](https://img.shields.io/badge/Status-In_Development-orange)
+![Research](https://img.shields.io/badge/Focus-Photonic_Interconnects-blue)
+
 # Chiplet Interconnect Simulator
 
 A Python model for comparing chiplet interconnect types, topologies and packet traffic. 
