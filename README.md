@@ -1,9 +1,8 @@
 # Chiplet Interconnect Simulator
 
-A small Python model and local interactive dashboard for comparing chiplet
-interconnect topologies and packet traffic. The model supports electrical or
-optical interconnects, repeatable traffic matrices, symbolic results for
-unknown parameter values, and simple topology presets.
+A Python model for comparing chiplet interconnect types, topologies and packet traffic. 
+The model supports electrical or optical interconnects, repeatable traffic patterns, 
+symbolic results for unknown parameter values, and simple topology presets.
 
 ## Run the visualizer
 
